@@ -1,0 +1,18 @@
+{
+  "dataset_name": "UCI SMS Spam Collection",
+  "official_source": "UCI Machine Learning Repository / Tiago A. Almeida & Jos\u00e9 Mar\u00eda G\u00f3mez Hidalgo",
+  "model_role": "SMS Spam/Malicious Message Classifier",
+  "label_semantics": {
+    "0": "Legitimate/Ham",
+    "1": "Malicious/Spam"
+  },
+  "statistics": {
+    "raw_rows_ingested": 5574,
+    "valid_parsed_rows": 5574,
+    "dropped_duplicates": 414,
+    "final_cleaned_rows": 5160,
+    "ham_count": 4518,
+    "spam_count": 642,
+    "spam_ratio": 0.1244
+  }
+}

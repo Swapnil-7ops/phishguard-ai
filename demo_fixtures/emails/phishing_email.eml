@@ -1,0 +1,22 @@
+From: security@example.test
+Reply-To: verify@example.test
+To: student@example.com
+Subject: Urgent Account Verification Required
+Date: Thu, 01 Oct 2026 10:15:00 +0000
+Message-ID: <demo-phish-002@example.test>
+Authentication-Results:
+ mx.example.com; spf=softfail (example.test); dkim=fail; dmarc=fail
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+MIME-Version: 1.0
+
+Your account requires immediate verification.
+
+Please verify your account using the following demonstration URL:
+
+https://example.test/verify-account
+
+Failure to verify may result in account suspension.
+
+Regards,
+Demo Security Team

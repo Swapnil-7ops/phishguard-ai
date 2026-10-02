@@ -1,0 +1,64 @@
+{
+  "model_type": "RandomForestClassifier",
+  "feature_names": [
+    "url_length",
+    "hostname_length",
+    "path_length",
+    "query_length",
+    "num_dots",
+    "num_hyphens",
+    "num_underscores",
+    "num_slashes",
+    "num_question_marks",
+    "num_equal_signs",
+    "num_ampersands",
+    "num_percent",
+    "has_at_symbol",
+    "has_ip_address",
+    "uses_https",
+    "num_subdomains",
+    "suspicious_keyword_count",
+    "is_url_shortener",
+    "hostname_entropy",
+    "digit_count",
+    "special_char_count",
+    "domain_path_ratio",
+    "has_suspicious_tld",
+    "encoded_char_count",
+    "has_double_slash_path"
+  ],
+  "feature_count": 25,
+  "label_mapping": {
+    "raw_to_normalized": {
+      "1": 0,
+      "0": 1
+    },
+    "normalized_to_name": {
+      "0": "Legitimate",
+      "1": "Phishing"
+    },
+    "classes": [
+      0,
+      1
+    ],
+    "phishing_class": 1,
+    "legitimate_class": 0
+  },
+  "training_configuration": {
+    "dataset": "PhiUSIIL Phishing URL Dataset (UCI Repository ID: 967)",
+    "total_samples": 235370,
+    "train_samples": 188296,
+    "test_samples": 47074,
+    "test_ratio": 0.2,
+    "random_state": 42,
+    "stratified": true,
+    "primary_model": "Random Forest",
+    "hyperparameters": {
+      "n_estimators": 100,
+      "max_depth": 15,
+      "min_samples_split": 4,
+      "min_samples_leaf": 2,
+      "class_weight": "balanced"
+    }
+  }
+}

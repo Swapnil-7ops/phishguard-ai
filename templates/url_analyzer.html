@@ -1,0 +1,254 @@
+{% extends "base.html" %}
+
+{% block title %}URL Analyzer — PhishGuard AI{% endblock %}
+{% block page_title %}URL Analyzer{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <!-- Page Header -->
+  <div class="analyzer-header" style="margin-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0;">
+    <div class="analyzer-title">ANALYZE THE LINK.</div>
+    <div class="analyzer-subtitle">Lexical &amp; Structural Analysis · No Web Crawling · SSRF-Safe</div>
+  </div>
+
+  <!-- Input Card -->
+  <div class="pg-card" style="border-radius: 0 0 var(--radius-md) var(--radius-md); border-top: none; margin-bottom: 28px;">
+    <form id="url-form">
+      <div class="input-group-cyber">
+        <input
+          type="text"
+          id="url-input"
+          class="cyber-input"
+          placeholder="https://example.com/login?token=… or paste any suspicious URL"
+          autocomplete="off"
+          required
+        />
+        <button type="submit" class="btn-cyber" style="min-width: 140px;">Analyze URL</button>
+        <button type="button" id="url-clear-btn" class="btn-cyber-outline" style="min-width: 80px;">Clear</button>
+      </div>
+
+      <div class="demo-chips-container">
+        <span class="chip-label">Try an example:</span>
+        <button type="button" class="demo-chip url-demo-btn" data-url="https://www.google.com">google.com (Legitimate)</button>
+        <button type="button" class="demo-chip url-demo-btn" data-url="https://github.com/torvalds/linux">GitHub (Legitimate)</button>
+        <button type="button" class="demo-chip url-demo-btn" data-url="http://192.168.1.100/secure/login.php?user=admin">Raw IP (Phishing)</button>
+        <button type="button" class="demo-chip url-demo-btn" data-url="http://security-paypal.com@verify-account-update.tk/sign-in">@ Redirect (Phishing)</button>
+        <button type="button" class="demo-chip url-demo-btn" data-url="http://secure-login.paypal.com.customer-verification-portal.info/webscr">Nested Subdomains</button>
+        <button type="button" class="demo-chip url-demo-btn" data-url="http://bit.ly/3xPayPalLoginUpdate">URL Shortener</button>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Section -->
+  <div id="url-result-section" class="result-section">
+
+    <!-- Model offline banner -->
+    <div id="url-dev-mode-banner" style="display: none; background-color: rgba(135, 79, 65, 0.1); border: 1.5px solid var(--terracotta); border-left: 4px solid var(--terracotta); border-radius: var(--radius-sm); padding: 12px 18px; margin-bottom: 20px;">
+      <div style="font-weight: 700; font-size: 13px; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+        ⚠ ML Model Not Trained — Heuristic Rule Analysis Active
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        25 structural features extracted and evaluated against deterministic rules.
+        Train the Random Forest model to activate full probabilistic scoring.
+      </div>
+    </div>
+
+    <!-- Hero Score Grid -->
+    <div class="result-hero">
+
+      <!-- Risk Score Panel -->
+      <div class="gauge-card">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--aqua); margin-bottom: 12px;">Risk Score</div>
+        <div id="res-risk-circle" class="risk-circle Low">
+          <div id="res-risk-score" class="risk-number">0</div>
+          <div class="risk-scale">out of 100</div>
+          <div class="risk-bar-track">
+            <div class="risk-bar-fill" id="res-risk-bar" style="width: 0%;"></div>
+          </div>
+          <div id="res-risk-level" class="badge-risk-level Low">Low Risk</div>
+        </div>
+        <div style="margin-top: 14px; font-size: 11px; color: rgba(251,233,208,0.6); text-transform: uppercase; letter-spacing: 0.5px;">
+          ML Probability:
+          <strong id="res-confidence" style="color: var(--aqua-light); margin-left: 4px;">—</strong>
+        </div>
+      </div>
+
+      <!-- Verdict & Recommendation -->
+      <div class="verdict-card">
+        <div>
+          <div class="verdict-header">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 1px;">Final Decision</div>
+            <div id="res-verdict-badge" class="verdict-badge Legitimate">LEGITIMATE</div>
+          </div>
+          <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 8px;">
+            Analyzed URL:
+          </div>
+          <code id="res-analyzed-url" style="font-family: var(--font-mono); font-size: 12px; color: var(--teal); word-break: break-all; display: block; padding: 8px 12px; background-color: var(--cream-dark); border-radius: var(--radius-sm); border: 1px solid var(--border-color);"></code>
+        </div>
+
+        <div class="recommendation-box" style="margin-top: 16px;">
+          <div style="font-weight: 700; font-size: 11px; text-transform: uppercase; color: var(--teal); margin-bottom: 4px; letter-spacing: 1px;">Security Recommendation</div>
+          <div id="res-recommendation" class="recommendation-text">No immediate threat indicators observed.</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Triggered Security Rules -->
+    <div class="pg-card" style="margin-bottom: 20px;">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num">1</div>
+        <div class="analysis-section-label">Detected Security Indicators</div>
+        <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto;">Deterministic Rule Engine</span>
+      </div>
+      <div id="res-rules-list" class="indicators-list"></div>
+    </div>
+
+    <!-- Explainability Accordion -->
+    <div class="accordion">
+      <div class="accordion-header">
+        <span>How Was This Score Calculated? — Explainable AI Breakdown</span>
+        <span class="accordion-arrow">▼</span>
+      </div>
+      <div class="accordion-body">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">
+          The composite Risk Score is computed transparently: the Random Forest ML model probability
+          contributes up to 60 points, and deterministic rule violations contribute up to 40 points.
+        </div>
+        <div id="res-formula" class="formula-box"></div>
+        <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.5px;">Key Decision Factors:</div>
+        <ul id="res-reasons-list" style="padding-left: 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.8;"></ul>
+      </div>
+    </div>
+
+    <!-- 25 Features Accordion -->
+    <div class="accordion">
+      <div class="accordion-header">
+        <span>View Extracted Feature Vector — 25 Dimensions</span>
+        <span class="accordion-arrow">▼</span>
+      </div>
+      <div class="accordion-body">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px;">
+          These 25 lexical and structural values represent the exact numerical vector passed into the RandomForestClassifier.
+        </div>
+        <div id="res-features-grid" class="features-grid"></div>
+      </div>
+    </div>
+
+    <!-- ──────────── PHASE 9: ADVANCED EXPLANATION SECTIONS ──────────── -->
+
+    <!-- WHY WAS THIS FLAGGED? -->
+    <div id="p9-why-flagged" style="display:none; margin-top: 28px;">
+      <div class="p9-section-header" style="background: var(--teal); color: var(--cream); padding: 14px 20px; border-left: 5px solid var(--coral); margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 2px;">Investigation Report</div>
+        <div style="font-size: 18px; font-weight: 800; font-family: var(--font-display); letter-spacing: -0.5px;">WHY WAS THIS FLAGGED?</div>
+      </div>
+      <div id="p9-why-list" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- WHAT DOES THIS MEAN? -->
+    <div id="p9-what-means" style="display:none; margin-top: 20px;">
+      <div style="background: var(--terracotta); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--coral);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Risk Assessment</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">WHAT DOES THIS MEAN?</div>
+      </div>
+      <div id="p9-what-text" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 18px 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.7;"></div>
+    </div>
+
+    <!-- ──────────── PHASE 11: THREAT INTELLIGENCE SECTION ──────────── -->
+    <div id="p11-threat-intel" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua); display:flex; justify-content:space-between; align-items:center;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">External Enrichment</div>
+          <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">THREAT INTELLIGENCE</div>
+        </div>
+        <div id="p11-ti-status-badge" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border-radius: var(--radius-sm);"></div>
+      </div>
+      <div id="p11-ti-body" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 18px 20px;"></div>
+    </div>
+
+    <!-- RISK CONTRIBUTION -->
+    <div id="p9-risk-contrib" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Score Breakdown</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">RISK CONTRIBUTION</div>
+      </div>
+      <div style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 14px;">
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--teal); padding: 16px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">ML Evidence</div>
+            <div id="p9-ml-pts" style="font-size: 26px; font-weight: 900; font-family: var(--font-display); color: var(--teal);">— / 60</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Random Forest contribution</div>
+          </div>
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--coral); padding: 16px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Rule Evidence</div>
+            <div id="p9-rule-pts" style="font-size: 26px; font-weight: 900; font-family: var(--font-display); color: var(--coral);">— / 40</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Deterministic rule contribution</div>
+          </div>
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--terracotta); padding: 16px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Final Risk Score</div>
+            <div id="p9-total-score" style="font-size: 26px; font-weight: 900; font-family: var(--font-display); color: var(--terracotta);">— / 100</div>
+            <div style="font-size: 11px; color: var(--text-secondary); margin-top: 4px;">Composite risk score</div>
+          </div>
+        </div>
+        <div id="p9-formula-text" style="margin-top: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary); background: var(--cream); padding: 10px 14px; border: 1px solid var(--border-color);"></div>
+      </div>
+    </div>
+
+    <!-- INVESTIGATION TIMELINE -->
+    <div id="p9-timeline" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Analysis Pipeline</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">INVESTIGATION TIMELINE</div>
+      </div>
+      <div id="p9-timeline-list" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;">
+        <!-- populated by JS -->
+      </div>
+    </div>
+
+    <!-- TECHNICAL FEATURE INSPECTOR -->
+    <div id="p9-feature-inspector" style="display:none; margin-top: 20px;">
+      <div class="accordion" style="border-radius: 0;">
+        <div class="accordion-header" style="border-left: 5px solid var(--aqua); border-radius: 0;">
+          <span style="font-family: var(--font-display); font-weight: 800;">TECHNICAL FEATURE INSPECTOR — 25 Structural Observations</span>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 14px; line-height: 1.6;">
+            The following observations are derived from the 25 lexical and structural features extracted from the URL.
+            These are structural observations — not causal explanations for the model's output.
+          </div>
+          <div id="p9-inspector-table"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GLOBAL MODEL FEATURE IMPORTANCE -->
+    <div id="p9-global-importance" style="display:none; margin-top: 20px;">
+      <div class="accordion" style="border-radius: 0;">
+        <div class="accordion-header" style="border-left: 5px solid var(--terracotta); border-radius: 0;">
+          <span style="font-family: var(--font-display); font-weight: 800;">GLOBAL MODEL FEATURE IMPORTANCE</span>
+          <span class="accordion-arrow">▼</span>
+        </div>
+        <div class="accordion-body">
+          <div style="background: rgba(135,79,65,0.07); border: 1.5px solid var(--terracotta); border-left: 4px solid var(--terracotta); padding: 10px 14px; font-size: 12px; color: var(--terracotta); margin-bottom: 14px; line-height: 1.6;">
+            ⚠ <strong>Important:</strong> These values reflect the Random Forest model's global feature importance
+            across all training data — not a per-sample explanation for this specific URL.
+            Global importance indicates which features are generally most informative for the classifier.
+          </div>
+          <div id="p9-importance-list"></div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/analyzer.js"></script>
+{% endblock %}

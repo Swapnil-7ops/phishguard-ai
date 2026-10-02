@@ -1,0 +1,250 @@
+{% extends "base.html" %}
+
+{% block title %}Message Analyzer — PhishGuard AI{% endblock %}
+{% block page_title %}Message Analyzer{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <!-- Page Header -->
+  <div class="analyzer-header" style="margin-bottom: 0; border-radius: var(--radius-md) var(--radius-md) 0 0;">
+    <div class="analyzer-title">ANALYZE THE MESSAGE.</div>
+    <div class="analyzer-subtitle">NLP Classification · Social Engineering Detection · URL Cascade Analysis</div>
+  </div>
+
+  <!-- Input Card -->
+  <div class="pg-card" style="border-radius: 0 0 var(--radius-md) var(--radius-md); border-top: none; margin-bottom: 28px;">
+    <form id="message-form">
+      <textarea
+        id="message-input"
+        class="cyber-textarea"
+        placeholder="Paste the complete message, SMS, or email body here…"
+        required
+      ></textarea>
+
+      <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+        <div class="demo-chips-container">
+          <span class="chip-label">Try an example:</span>
+          <button type="button" class="demo-chip msg-demo-btn" data-msg="URGENT: Your Chase checking account has been suspended due to suspicious activity. Verify immediately at http://chase-unlock.tk to restore access within 24 hours.">Bank Phishing SMS</button>
+          <button type="button" class="demo-chip msg-demo-btn" data-msg="SECURITY ALERT: Unauthorized login attempt from Russia. Your OTP verification code is 849203. Confirm your identity now at http://paypal-security-update.xyz">OTP Interception</button>
+          <button type="button" class="demo-chip msg-demo-btn" data-msg="Your Netflix subscription payment has failed! Update your credit card details immediately: http://netflix-billing.top to prevent immediate account cancellation.">Subscription Scam</button>
+          <button type="button" class="demo-chip msg-demo-btn" data-msg="Hi Swapnil, please find attached the revised presentation slides for the senior design project presentation tomorrow morning.">Legitimate Email</button>
+        </div>
+        <div style="display: flex; gap: 10px;">
+          <button type="button" id="msg-clear-btn" class="btn-cyber-outline">Clear</button>
+          <button type="submit" class="btn-cyber">Analyze Message</button>
+        </div>
+      </div>
+    </form>
+  </div>
+
+  <!-- Results Section -->
+  <div id="message-result-section" class="result-section">
+
+    <!-- Model offline banner -->
+    <div id="msg-dev-mode-banner" style="display: none; background-color: rgba(135, 79, 65, 0.1); border: 1.5px solid var(--terracotta); border-left: 4px solid var(--terracotta); border-radius: var(--radius-sm); padding: 12px 18px; margin-bottom: 20px;">
+      <div style="font-weight: 700; font-size: 13px; color: var(--terracotta); text-transform: uppercase; letter-spacing: 0.5px;">
+        ⚠ NLP Model Offline — Heuristic Rule Analysis Active
+      </div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        Urgency triggers, psychological manipulation patterns, and embedded URLs evaluated via cybersecurity rules.
+        Train the TF-IDF model to activate full statistical text classification.
+      </div>
+    </div>
+
+    <!-- ─────────── SECTION 1: TEXT ANALYSIS ─────────── -->
+    <div style="margin-bottom: 8px;">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num">1</div>
+        <div class="analysis-section-label">Text Analysis</div>
+      </div>
+    </div>
+
+    <!-- Score + Verdict Row -->
+    <div class="result-hero" style="margin-bottom: 20px;">
+      <div class="gauge-card">
+        <div style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 2px; color: var(--aqua); margin-bottom: 12px;">Risk Score</div>
+        <div id="msg-risk-circle" class="risk-circle Low">
+          <div id="msg-risk-score" class="risk-number">0</div>
+          <div class="risk-scale">out of 100</div>
+          <div class="risk-bar-track">
+            <div class="risk-bar-fill" id="msg-risk-bar" style="width: 0%;"></div>
+          </div>
+          <div id="msg-risk-level" class="badge-risk-level Low">Low Risk</div>
+        </div>
+      </div>
+
+      <div class="verdict-card">
+        <div>
+          <div class="verdict-header">
+            <div style="font-size: 11px; text-transform: uppercase; color: var(--text-secondary); font-weight: 700; letter-spacing: 1px;">Content Verdict</div>
+            <div id="msg-verdict-badge" class="verdict-badge Legitimate">LEGITIMATE</div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 12px;">
+            <div style="background: var(--cream); padding: 10px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Model</div>
+              <div id="msg-model-name" style="font-size: 13px; font-weight: 700; color: var(--teal); font-family: var(--font-display);">TF-IDF + Logistic Regression</div>
+            </div>
+            <div style="background: var(--cream); padding: 10px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color);">
+              <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">ML Probability</div>
+              <div id="msg-ml-prob" style="font-size: 20px; font-weight: 800; color: var(--teal); font-family: var(--font-display);">—</div>
+            </div>
+          </div>
+          <div style="background: var(--cream); padding: 10px 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); margin-bottom: 12px;">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Linguistic Classification</div>
+            <div id="msg-ml-pred" style="font-size: 15px; font-weight: 700; color: var(--teal);">—</div>
+          </div>
+        </div>
+        <div class="recommendation-box">
+          <div style="font-weight: 700; font-size: 11px; text-transform: uppercase; color: var(--teal); margin-bottom: 4px; letter-spacing: 1px;">Security Recommendation</div>
+          <div id="msg-recommendation" class="recommendation-text">No threat patterns identified.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linguistic Evidence -->
+    <div id="msg-text-evidence-card" class="pg-card" style="margin-bottom: 20px;">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num" style="background-color: var(--aqua); color: var(--teal);">2</div>
+        <div class="analysis-section-label" style="color: var(--aqua);">Linguistic Evidence</div>
+        <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto;">TF-IDF Vocabulary</span>
+      </div>
+      <div id="msg-text-evidence-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+        <span style="color: var(--text-secondary); font-size: 13px;">No high-weight adversarial vocabulary detected.</span>
+      </div>
+    </div>
+
+    <!-- ─────────── SECTION 2: SOCIAL ENGINEERING INDICATORS ─────────── -->
+    <div class="pg-card" style="margin-bottom: 20px;">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num" style="background-color: var(--terracotta);">3</div>
+        <div class="analysis-section-label" style="color: var(--terracotta);">Social Engineering Indicators</div>
+        <span style="font-size: 11px; color: var(--text-secondary); font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: auto;">Heuristic Rules</span>
+      </div>
+      <div id="msg-indicators-list" class="indicators-list"></div>
+    </div>
+
+    <!-- ─────────── SECTION 3: EMBEDDED URL ANALYSIS ─────────── -->
+    <div class="pg-card" style="margin-bottom: 20px;">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num" style="background-color: var(--coral);">4</div>
+        <div class="analysis-section-label" style="color: var(--coral);">Embedded URL Analysis</div>
+      </div>
+      <div id="msg-extracted-urls-list"></div>
+    </div>
+
+    <!-- URL Cascade Findings -->
+    <div id="msg-cascade-section" class="pg-card" style="margin-bottom: 20px; display: none; border-top: 4px solid var(--coral);">
+      <div class="analysis-section-header">
+        <div class="analysis-section-num" style="background-color: var(--coral);">!</div>
+        <div class="analysis-section-label" style="color: var(--coral);">Cascaded URL Investigation Findings</div>
+      </div>
+      <div id="msg-cascade-list" class="indicators-list"></div>
+    </div>
+
+    <!-- ─────────── SECTION 4: EXPLAINABILITY ─────────── -->
+    <div class="accordion">
+      <div class="accordion-header">
+        <span>Explainable Score Breakdown — How Was This Determined?</span>
+        <span class="accordion-arrow">▼</span>
+      </div>
+      <div class="accordion-body">
+        <div style="font-size: 13px; color: var(--text-secondary); margin-bottom: 12px; line-height: 1.6;">
+          The composite Risk Score combines the TF-IDF text classifier posterior (up to 55 pts),
+          heuristic social engineering indicators (up to 25 pts), and cascaded embedded URL risks (up to 20 pts).
+        </div>
+        <div id="msg-formula" class="formula-box"></div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-top: 16px;">
+          <div style="background: var(--cream); padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); border-top: 3px solid var(--aqua);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Text ML Base</div>
+            <div id="msg-bd-text-pts" style="font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--teal);">— / 55</div>
+          </div>
+          <div style="background: var(--cream); padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); border-top: 3px solid var(--terracotta);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">Indicator Rules</div>
+            <div id="msg-bd-rule-pts" style="font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--terracotta);">— / 25</div>
+          </div>
+          <div style="background: var(--cream); padding: 14px; border-radius: var(--radius-sm); border: 1.5px solid var(--border-color); border-top: 3px solid var(--coral);">
+            <div style="font-size: 11px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; margin-bottom: 4px;">URL Cascade Risk</div>
+            <div id="msg-bd-url-pts" style="font-family: var(--font-display); font-size: 22px; font-weight: 800; color: var(--coral);">— / 20</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ──────────── PHASE 9: ADVANCED EXPLANATION SECTIONS ──────────── -->
+
+    <!-- WHY WAS THIS FLAGGED? -->
+    <div id="msg-p9-why-flagged" style="display:none; margin-top: 28px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 14px 20px; border-left: 5px solid var(--coral); margin-bottom: 0;">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.7; margin-bottom: 2px;">Investigation Report</div>
+        <div style="font-size: 18px; font-weight: 800; font-family: var(--font-display); letter-spacing: -0.5px;">WHY WAS THIS FLAGGED?</div>
+      </div>
+      <div id="msg-p9-why-list" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;"></div>
+    </div>
+
+    <!-- WHAT DOES THIS MEAN? -->
+    <div id="msg-p9-what-means" style="display:none; margin-top: 20px;">
+      <div style="background: var(--terracotta); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--coral);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Risk Assessment</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">WHAT DOES THIS MEAN?</div>
+      </div>
+      <div id="msg-p9-what-text" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 18px 20px; font-size: 14px; color: var(--text-secondary); line-height: 1.7;"></div>
+    </div>
+
+    <!-- THREAT INTELLIGENCE (Phase 11) -->
+    <div id="msg-p11-threat-intel" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua); display: flex; align-items: center; justify-content: space-between;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">External Enrichment</div>
+          <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">THREAT INTELLIGENCE</div>
+        </div>
+        <span id="msg-p11-ti-status-badge" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border: 2px solid var(--aqua); border-radius: 2px; color: var(--aqua);"></span>
+      </div>
+      <div id="msg-p11-ti-body" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 18px 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+    </div>
+
+    <!-- RISK CONTRIBUTION -->
+    <div id="msg-p9-risk-contrib" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Score Breakdown</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">RISK CONTRIBUTION</div>
+      </div>
+      <div style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;">
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px;">
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--aqua); padding: 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Text ML</div>
+            <div id="msg-p9-ml-pts" style="font-size: 22px; font-weight: 900; font-family: var(--font-display); color: var(--teal);">— / 55</div>
+          </div>
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--terracotta); padding: 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Heuristics</div>
+            <div id="msg-p9-ind-pts" style="font-size: 22px; font-weight: 900; font-family: var(--font-display); color: var(--terracotta);">— / 25</div>
+          </div>
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--coral); padding: 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">URL Cascade</div>
+            <div id="msg-p9-url-pts" style="font-size: 22px; font-weight: 900; font-family: var(--font-display); color: var(--coral);">— / 20</div>
+          </div>
+          <div style="background: var(--cream); border: 1.5px solid var(--border-color); border-top: 4px solid var(--terracotta); padding: 14px;">
+            <div style="font-size: 11px; text-transform: uppercase; letter-spacing: 1px; font-weight: 700; color: var(--text-secondary); margin-bottom: 6px;">Final Score</div>
+            <div id="msg-p9-total" style="font-size: 22px; font-weight: 900; font-family: var(--font-display); color: var(--terracotta);">— / 100</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- INVESTIGATION TIMELINE -->
+    <div id="msg-p9-timeline" style="display:none; margin-top: 20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua);">
+        <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">Analysis Pipeline</div>
+        <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">INVESTIGATION TIMELINE</div>
+      </div>
+      <div id="msg-p9-timeline-list" style="background: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; padding: 20px;"></div>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/analyzer.js"></script>
+{% endblock %}

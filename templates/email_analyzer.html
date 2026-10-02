@@ -1,0 +1,349 @@
+{% extends "base.html" %}
+
+{% block title %}Email (.EML) Phishing Analyzer — PhishGuard AI{% endblock %}
+{% block page_title %}Email (.EML) Phishing Analyzer{% endblock %}
+
+{% block content %}
+<div style="max-width: 960px; margin: 0 auto;">
+
+  <!-- ── Page Header ── -->
+  <div style="margin-bottom: 28px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <span style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--coral);">MODAL ANALYSIS</span>
+    </div>
+    <h1 style="font-family:var(--font-display); font-size:28px; font-weight:800; color:var(--teal); margin:0 0 8px 0; line-height:1.2;">
+      EMAIL PHISHING ANALYZER (.EML)
+    </h1>
+    <p style="font-size:13px; color:var(--text-secondary); line-height:1.7; max-width:680px; margin:0;">
+      Upload an RFC 5322 email file (.eml) for explainable phishing detection. PhishGuard inspects header forensics, validates authentication results (SPF/DKIM/DMARC), screens subject social-engineering triggers, applies text classifier heuristics, cascades embedded links to the URL analyzer, and evaluates attachment metadata—safely in memory without executing active content.
+    </p>
+  </div>
+
+  <!-- ── Upload Card ── -->
+  <div class="pg-card" style="margin-bottom:24px;">
+    <div class="card-header-clean">
+      <div>
+        <span class="section-label" style="margin-bottom:4px;">MIME / RFC 5322 Forensics</span>
+        <div class="card-title-lg">Upload Raw Email File</div>
+      </div>
+      <div style="font-size:11px; color:var(--aqua); text-transform:uppercase; letter-spacing:1px; font-weight:700;">.EML ONLY · max 10 MB</div>
+    </div>
+
+    <!-- Dropzone -->
+    <div id="email-dropzone"
+         style="border:2px dashed var(--border-color); background:var(--cream-light); border-radius:var(--radius-sm); padding:44px 24px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;"
+         onmouseover="this.style.borderColor='var(--coral)'"
+         onmouseout="this.style.borderColor='var(--border-color)'"
+         ondragover="event.preventDefault(); this.style.borderColor='var(--coral)'; this.style.background='var(--cream-dark)';"
+         ondragleave="this.style.borderColor='var(--border-color)'; this.style.background='var(--cream-light)';"
+         ondrop="handleEmailDrop(event)">
+
+      <!-- File Info Wrap -->
+      <div id="email-file-info-wrap" style="display:none; margin-bottom:16px;">
+        <div style="display:inline-flex; align-items:center; gap:10px; background:#fff; border:1.5px solid var(--teal); padding:10px 18px; border-radius:var(--radius-sm);">
+          <span style="font-size:24px;">✉️</span>
+          <div style="text-align:left;">
+            <div id="email-filename-display" style="font-weight:700; font-size:13px; color:var(--teal);">email.eml</div>
+            <div id="email-filesize-display" style="font-size:11px; color:var(--text-muted);">0 KB</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="email-dropzone-icon" style="font-size:48px; margin-bottom:12px; line-height:1;">📬</div>
+      <div style="font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--teal); margin-bottom:4px;">DROP .EML EMAIL FILE HERE</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">or click to select an email message from your computer</div>
+
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="btn-cyber" onclick="document.getElementById('email-file-input').click();" style="font-size:13px; padding:10px 24px;">
+          CHOOSE .EML FILE
+        </button>
+        <button type="button" id="email-clear-btn" class="btn-secondary" onclick="clearEmailUpload()" style="display:none; font-size:13px; padding:10px 18px;">
+          CLEAR
+        </button>
+      </div>
+
+      <input type="file" id="email-file-input" accept=".eml,message/rfc822" style="display:none;" onchange="onEmailFileSelect(event)">
+    </div>
+
+    <!-- Status bar -->
+    <div id="email-status" style="margin-top:14px; text-align:center; font-size:13px; font-weight:600; min-height:20px;"></div>
+
+    <!-- Security & Privacy Banner -->
+    <div style="margin-top: 18px; padding: 12px 16px; background-color: var(--cream-dark); border-left: 3px solid var(--teal); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+      🛡️ <strong>Zero Execution & In-Memory Privacy:</strong> Uploaded emails are parsed in RAM and are <em>never</em> executed. Attachments are never unpacked or opened. Extracted URLs are evaluated lexically and never fetched. Email bodies and headers are <em>never</em> sent to external threat intelligence providers.
+    </div>
+  </div>
+
+  <!-- ── Results Section ── -->
+  <div id="email-result-section" style="display:none;">
+
+    <!-- Risk Hero -->
+    <div class="result-hero" style="margin-bottom:20px;">
+      <div class="gauge-card">
+        <div id="email-risk-circle" class="risk-circle Low">
+          <div id="email-risk-score" class="risk-number">0</div>
+          <div class="risk-scale">Email Risk / 100</div>
+        </div>
+        <div id="email-risk-level" class="badge-risk-level Low">Low Risk</div>
+      </div>
+
+      <div class="verdict-card">
+        <div>
+          <div class="verdict-header">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Composite Assessment Verdict</div>
+            <div id="email-verdict-badge" class="verdict-badge Legitimate">LEGITIMATE</div>
+          </div>
+          <div id="email-prediction-text" style="font-size:14px; color:var(--teal); font-weight:700; margin-top:6px;">
+            --
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          <div style="font-weight:700; font-size:12px; text-transform:uppercase; color:var(--teal); margin-bottom:4px; letter-spacing:0.5px;">Security Recommendation</div>
+          <div id="email-recommendation" class="recommendation-text">No significant threat indicators observed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 1. Sender & Delivery Forensics Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Header Forensics</span>
+          <div class="card-title-lg">Sender & Routing Integrity</div>
+        </div>
+        <div id="email-header-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 20 pts</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(260px, 1fr)); gap:12px; margin-bottom:16px;">
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">From Header</div>
+          <div id="email-sender-val" style="font-size:12px; font-weight:600; color:var(--teal); word-break:break-all; margin-top:2px;">--</div>
+          <div style="font-size:10px; color:var(--text-secondary); margin-top:4px;">Domain: <strong id="email-sender-domain">--</strong></div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Reply-To Header</div>
+          <div id="email-replyto-val" style="font-size:12px; font-weight:600; color:var(--teal); word-break:break-all; margin-top:2px;">--</div>
+          <div style="font-size:10px; color:var(--text-secondary); margin-top:4px;">Domain: <strong id="email-replyto-domain">--</strong></div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Return-Path Header</div>
+          <div id="email-returnpath-val" style="font-size:12px; font-weight:600; color:var(--teal); word-break:break-all; margin-top:2px;">--</div>
+          <div style="font-size:10px; color:var(--text-secondary); margin-top:4px;">Domain: <strong id="email-returnpath-domain">--</strong></div>
+        </div>
+      </div>
+
+      <!-- Header Indicators -->
+      <div id="email-header-indicators-wrap">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px;">Header Discrepancies Flagged</div>
+        <div id="email-header-indicators-list" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No header anomalies detected.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 2. Authentication Forensics Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Authentication Results Header</span>
+          <div class="card-title-lg">SPF, DKIM & DMARC Status</div>
+        </div>
+        <div id="email-auth-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 20 pts</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:16px;">
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">SPF</div>
+          <div id="email-auth-spf-badge" style="display:inline-block; margin-top:6px; font-size:12px; font-weight:700; padding:3px 10px; border-radius:3px; background:#e0e0e0;">--</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">DKIM</div>
+          <div id="email-auth-dkim-badge" style="display:inline-block; margin-top:6px; font-size:12px; font-weight:700; padding:3px 10px; border-radius:3px; background:#e0e0e0;">--</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">DMARC</div>
+          <div id="email-auth-dmarc-badge" style="display:inline-block; margin-top:6px; font-size:12px; font-weight:700; padding:3px 10px; border-radius:3px; background:#e0e0e0;">--</div>
+        </div>
+      </div>
+
+      <div id="email-auth-indicators-wrap">
+        <div id="email-auth-indicators-list" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No authentication failures detected.</div>
+        </div>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:10px; line-height:1.5;">
+        * Note: Authentication verdicts reflect the supplied email's Authentication-Results header. No active external DNS queries are made.
+      </div>
+    </div>
+
+    <!-- ── 3. Subject Social Engineering Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Psychological Manipulation Detection</span>
+          <div class="card-title-lg">Subject Line Analysis</div>
+        </div>
+        <div id="email-subject-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 15 pts</div>
+      </div>
+
+      <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-sm); margin-bottom:14px;">
+        <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Subject</div>
+        <div id="email-subject-val" style="font-size:14px; font-weight:700; color:var(--teal); margin-top:2px;">--</div>
+      </div>
+
+      <div id="email-subject-indicators-wrap">
+        <div id="email-subject-indicators-list" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No high-pressure or social engineering keywords found in subject.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── 4. Body Text & Classifier Proxy Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Body Linguistic Inspection</span>
+          <div class="card-title-lg">Body Text & ML Proxy Assessment</div>
+        </div>
+        <div id="email-body-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 30 pts</div>
+      </div>
+
+      <!-- ML Proxy Info -->
+      <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); margin-bottom:14px;">
+        <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:8px;">
+          <div>
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Classifier Proxy Signal</div>
+            <div style="font-size:13px; font-weight:700; color:var(--teal); margin-top:2px;">TF-IDF + Logistic Regression Model</div>
+          </div>
+          <div style="text-align:right;">
+            <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Malicious Probability</div>
+            <div id="email-body-ml-prob" style="font-size:16px; font-weight:800; color:var(--teal); font-family:var(--font-display);">0.0%</div>
+          </div>
+        </div>
+        <div style="margin-top:8px; font-size:11px; color:var(--text-secondary); line-height:1.5;">
+          ℹ️ <strong>Academic Transparency:</strong> This classifier is trained on the UCI SMS Spam Collection and is reused here strictly as a proxy signal for linguistic social-engineering indicators. It is not an email-specific trained model.
+        </div>
+      </div>
+
+      <!-- Body Indicators -->
+      <div style="margin-bottom:14px;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; margin-bottom:8px;">Body Social Engineering Patterns Detected</div>
+        <div id="email-body-indicators-list" style="display:flex; flex-direction:column; gap:6px;">
+          <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No significant social engineering patterns identified.</div>
+        </div>
+      </div>
+
+      <!-- HTML Security Flags -->
+      <div id="email-html-security-wrap" style="display:none;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--coral); font-weight:700; margin-bottom:8px;">⚠️ HTML Security Anomalies</div>
+        <div id="email-html-security-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ── 5. Extracted URLs Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Link Cascade Analysis</span>
+          <div class="card-title-lg">Embedded Hyperlinks</div>
+        </div>
+        <div id="email-url-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 20 pts</div>
+      </div>
+
+      <div id="email-urls-list" style="display:flex; flex-direction:column; gap:10px;">
+        <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No embedded hyperlinks found in message body.</div>
+      </div>
+      <div style="font-size:11px; color:var(--text-muted); margin-top:12px; line-height:1.5;">
+        * Extracted links are evaluated via PhishGuard's Random Forest classifier and deterministic rules. Bounded URL risk contribution (up to 20 pts) is derived from the highest-risk link (not summed across multiple links).
+      </div>
+    </div>
+
+    <!-- ── 6. Attachment Metadata Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Payload Metadata Inspection</span>
+          <div class="card-title-lg">Email Attachments</div>
+        </div>
+        <div id="email-att-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 15 pts</div>
+      </div>
+
+      <div id="email-attachments-list" style="display:flex; flex-direction:column; gap:8px;">
+        <div style="font-size:12px; color:var(--text-secondary); font-style:italic;">No attachments detected in this message.</div>
+      </div>
+
+      <!-- Attachment Indicators -->
+      <div id="email-att-indicators-wrap" style="margin-top:12px; display:none;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--coral); font-weight:700; margin-bottom:6px;">Attachment Risk Flags</div>
+        <div id="email-att-indicators-list" style="display:flex; flex-direction:column; gap:6px;"></div>
+      </div>
+    </div>
+
+    <!-- ── 7. Composite Risk Contribution Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Risk Engine Transparency</span>
+          <div class="card-title-lg">Evidence Domain Point Breakdown</div>
+        </div>
+        <div style="font-size:11px; color:var(--text-muted); font-weight:700;">6 DOMAINS (CAPPED TO 100)</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; margin-bottom:14px;">
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Headers</div>
+          <div id="email-breakdown-hdr" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 20 pts</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Auth</div>
+          <div id="email-breakdown-auth" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 20 pts</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Subject</div>
+          <div id="email-breakdown-subj" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 15 pts</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Body ML</div>
+          <div id="email-breakdown-body" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 30 pts</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Attachment</div>
+          <div id="email-breakdown-att" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 15 pts</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1px solid var(--border-color); padding:10px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">URL Cascade</div>
+          <div id="email-breakdown-url" style="font-size:18px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:2px;">0</div>
+          <div style="font-size:9px; color:var(--text-muted);">max 20 pts</div>
+        </div>
+      </div>
+
+      <div style="background:var(--cream-dark); border-left:3px solid var(--teal); padding:10px 14px; border-radius:var(--radius-sm); font-family:var(--font-mono, monospace); font-size:12px; color:var(--teal);" id="email-formula-display">
+        Formula: Final Risk Score = min(100, Header + Auth + Subject + Body + Attachment + URL_Cascade)
+      </div>
+    </div>
+
+    <!-- ── 8. Investigation Timeline Card ── -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Audit & Explainability</span>
+          <div class="card-title-lg">Investigation Timeline</div>
+        </div>
+        <div style="font-size:11px; color:var(--aqua); font-weight:700;">CHRONOLOGICAL AUDIT TRAIL</div>
+      </div>
+
+      <div id="email-timeline-list" style="display:flex; flex-direction:column; gap:10px;"></div>
+    </div>
+
+  </div><!-- /email-result-section -->
+
+</div>
+
+<script src="/static/js/email_analyzer.js"></script>
+{% endblock %}

@@ -1,0 +1,33 @@
+{
+  "dataset_name": "PhiUSIIL Phishing URL Dataset",
+  "source": "UCI Machine Learning Repository (ID: 967)",
+  "reference": "Prasad, A., & Chandra, S. (2024). Computers & Security",
+  "original_row_count": 235795,
+  "missing_removed": 0,
+  "duplicates_removed": 425,
+  "final_row_count": 235370,
+  "raw_label_distribution": {
+    "1_legitimate": 134850,
+    "0_phishing": 100520
+  },
+  "normalized_label_distribution": {
+    "0_legitimate": 134850,
+    "1_phishing": 100520
+  },
+  "class_proportions": {
+    "legitimate_pct": 57.29,
+    "phishing_pct": 42.71
+  },
+  "label_mapping": {
+    "raw_to_normalized": {
+      "1": 0,
+      "0": 1
+    },
+    "normalized_to_name": {
+      "0": "Legitimate",
+      "1": "Phishing"
+    },
+    "phishing_class": 1,
+    "legitimate_class": 0
+  }
+}

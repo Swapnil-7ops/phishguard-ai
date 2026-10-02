@@ -1,0 +1,148 @@
+{% extends "base.html" %}
+
+{% block title %}PhishGuard AI — Detect Threats Before They Click{% endblock %}
+{% block page_title %}Home{% endblock %}
+
+{% block content %}
+
+<!-- Hero -->
+<div class="hero-section" style="margin-bottom: 40px;">
+  <div class="hero-left">
+    <div class="hero-eyebrow">PhishGuard AI · Threat Analysis Platform</div>
+    <h1 class="hero-headline">
+      STOP<br>BEFORE YOU<br><span>CLICK.</span>
+    </h1>
+    <p class="hero-subtext">
+      AI-powered analysis for suspicious URLs and messages. Combines a 25-feature Random Forest
+      classifier, a TF-IDF + Logistic Regression message model, and a deterministic rule engine
+      to deliver explainable 0–100 risk scores.
+    </p>
+    <div class="hero-actions">
+      <a href="/url-analyzer" class="btn-cyber" style="text-decoration: none; font-size: 14px; padding: 14px 28px;">
+        ANALYZE URL →
+      </a>
+      <a href="/message-analyzer" class="btn-cyber-outline-cream" style="text-decoration: none; font-size: 14px; padding: 14px 28px;">
+        CHECK A MESSAGE →
+      </a>
+    </div>
+  </div>
+
+  <div class="hero-right">
+    <div>
+      <div class="status-panel-title">System Status</div>
+      <div style="display: flex; flex-direction: column; gap: 8px;">
+        <div class="status-row">
+          <span class="status-label">URL Model</span>
+          <span class="status-dot">Operational</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Message Model</span>
+          <span class="status-dot">Operational</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Analysis Engine</span>
+          <span class="status-dot">Operational</span>
+        </div>
+        <div class="status-row">
+          <span class="status-label">Risk Engine</span>
+          <span class="status-dot">Operational</span>
+        </div>
+      </div>
+    </div>
+
+    <div style="border-top: 1.5px solid var(--border-color); padding-top: 16px;">
+      <div class="status-panel-title">Quick Links</div>
+      <div style="display: flex; flex-direction: column; gap: 6px;">
+        <a href="/dashboard" style="font-size: 13px; color: var(--teal); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          View Live Dashboard
+        </a>
+        <a href="/history" style="font-size: 13px; color: var(--teal); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+          Scan History Log
+        </a>
+        <a href="/model-performance" style="font-size: 13px; color: var(--teal); text-decoration: none; font-weight: 600; display: flex; align-items: center; gap: 6px;">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          Model Evaluation Metrics
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Four Capability Cards -->
+<div style="margin-bottom: 12px;">
+  <span class="section-label">Core Capabilities</span>
+</div>
+<div class="feature-cards-grid" style="margin-bottom: 40px;">
+  <div class="feature-card">
+    <div class="feature-card-label">25-Feature Random Forest</div>
+    <p class="feature-card-desc">
+      Trained on authentic phishing datasets. Evaluates Shannon entropy, subdomain depth, IP hosts,
+      and structural anomalies — no network requests, fully SSRF-safe.
+    </p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-card-label">Deterministic Rule Engine</div>
+    <p class="feature-card-desc">
+      Explicit security checks for @ redirects, link shorteners, credential-harvesting tokens,
+      and protocol anomalies — each with a transparent score contribution.
+    </p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-card-label">NLP Message Classifier</div>
+    <p class="feature-card-desc">
+      TF-IDF + Logistic Regression trained on the UCI SMS Spam Collection.
+      Detects social engineering patterns and cascades embedded URLs through the URL engine.
+    </p>
+  </div>
+  <div class="feature-card">
+    <div class="feature-card-label">Explainable Risk Scoring</div>
+    <p class="feature-card-desc">
+      Transparent 0–100 composite index separating statistical model probability
+      from deterministic rule impact. Every decision is auditable.
+    </p>
+  </div>
+</div>
+
+<!-- Quick Start -->
+<div class="pg-card">
+  <div class="card-header-clean">
+    <div class="card-title-lg">Quick Start</div>
+  </div>
+  <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 16px;">
+
+    <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); border-left: 4px solid var(--teal); padding: 18px; border-radius: var(--radius-sm);">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--teal); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+        1. Test a URL
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        Open <a href="/url-analyzer" style="color: var(--coral); font-weight: 600;">URL Analyzer</a>
+        and paste any URL. Try a legitimate domain vs. a raw IP host to see the 25-feature breakdown and risk score.
+      </p>
+    </div>
+
+    <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); border-left: 4px solid var(--coral); padding: 18px; border-radius: var(--radius-sm);">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--coral); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+        2. Analyze a Message
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        Open <a href="/message-analyzer" style="color: var(--coral); font-weight: 600;">Message Analyzer</a>
+        and paste an SMS or email. Watch the NLP pipeline extract social engineering indicators and cascade embedded URLs.
+      </p>
+    </div>
+
+    <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); border-left: 4px solid var(--terracotta); padding: 18px; border-radius: var(--radius-sm);">
+      <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; color: var(--terracotta); margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px;">
+        3. Review Model Metrics
+      </div>
+      <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+        Visit <a href="/model-performance" style="color: var(--coral); font-weight: 600;">Model Performance</a>
+        to inspect holdout accuracy, precision, recall, F1-scores, and feature importances from actual training runs.
+      </p>
+    </div>
+
+  </div>
+</div>
+
+{% endblock %}

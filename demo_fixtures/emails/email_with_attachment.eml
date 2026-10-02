@@ -1,0 +1,30 @@
+Content-Type: multipart/mixed; boundary="===============6483145222922887182=="
+MIME-Version: 1.0
+From: notifications@example.com
+To: student@example.com
+Subject: Demo Project Attachment Notice
+Date: Thu, 01 Oct 2026 10:30:00 +0000
+Message-ID: <demo-attach-003@example.com>
+Authentication-Results: mx.example.com; spf=pass; dkim=pass; dmarc=pass
+
+--===============6483145222922887182==
+Content-Type: text/plain; charset="us-ascii"
+MIME-Version: 1.0
+Content-Transfer-Encoding: 7bit
+
+Hello,
+
+Please find attached the harmless demo attachment for testing attachment metadata inspection.
+
+Regards,
+Demo Team
+--===============6483145222922887182==
+Content-Type: text/plain
+MIME-Version: 1.0
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="demo_attachment.txt"
+
+VGhpcyBpcyBhIGhhcm1sZXNzIGRlbW9uc3RyYXRpb24gYXR0YWNobWVudCBmb3IgUGhpc2hHdWFy
+ZCBBSS4K
+
+--===============6483145222922887182==--

@@ -1,0 +1,217 @@
+{
+  "model_name": "TF-IDF + Logistic Regression",
+  "classifier_description": "SMS Spam/Malicious Message Classifier",
+  "dataset": {
+    "name": "UCI SMS Spam Collection",
+    "source": "UCI Machine Learning Repository",
+    "total_cleaned_samples": 5160,
+    "train_samples": 4128,
+    "test_samples": 1032,
+    "ham_samples": 4518,
+    "spam_samples": 642
+  },
+  "accuracy": 0.9777,
+  "precision": 0.8947,
+  "recall": 0.9297,
+  "f1_score": 0.9119,
+  "confusion_matrix": {
+    "true_negative": 890,
+    "false_positive": 14,
+    "false_negative": 9,
+    "true_positive": 119
+  },
+  "classification_report": {
+    "Legitimate/Ham": {
+      "precision": 0.9899888765294772,
+      "recall": 0.9845132743362832,
+      "f1-score": 0.9872434830837493,
+      "support": 904.0
+    },
+    "Malicious/Spam": {
+      "precision": 0.8947368421052632,
+      "recall": 0.9296875,
+      "f1-score": 0.9118773946360154,
+      "support": 128.0
+    },
+    "accuracy": 0.9777131782945736,
+    "macro avg": {
+      "precision": 0.9423628593173702,
+      "recall": 0.9571003871681416,
+      "f1-score": 0.9495604388598824,
+      "support": 1032.0
+    },
+    "weighted avg": {
+      "precision": 0.9781746707094195,
+      "recall": 0.9777131782945736,
+      "f1-score": 0.9778957511832551,
+      "support": 1032.0
+    }
+  },
+  "top_indicative_terms": {
+    "spam_malicious": [
+      {
+        "term": "txt",
+        "weight": 5.0441
+      },
+      {
+        "term": "uk",
+        "weight": 4.4198
+      },
+      {
+        "term": "mobile",
+        "weight": 4.3696
+      },
+      {
+        "term": "claim",
+        "weight": 4.1507
+      },
+      {
+        "term": "150p",
+        "weight": 3.9843
+      },
+      {
+        "term": "50",
+        "weight": 3.8266
+      },
+      {
+        "term": "new",
+        "weight": 3.6614
+      },
+      {
+        "term": "text",
+        "weight": 3.6571
+      },
+      {
+        "term": "www",
+        "weight": 3.6517
+      },
+      {
+        "term": "free",
+        "weight": 3.586
+      },
+      {
+        "term": "reply",
+        "weight": 3.4042
+      },
+      {
+        "term": "service",
+        "weight": 3.3529
+      },
+      {
+        "term": "won",
+        "weight": 3.2185
+      },
+      {
+        "term": "com",
+        "weight": 3.1565
+      },
+      {
+        "term": "sms",
+        "weight": 3.1241
+      },
+      {
+        "term": "stop",
+        "weight": 3.1001
+      },
+      {
+        "term": "prize",
+        "weight": 3.0848
+      },
+      {
+        "term": "chat",
+        "weight": 2.9238
+      },
+      {
+        "term": "ringtone",
+        "weight": 2.8802
+      },
+      {
+        "term": "win",
+        "weight": 2.8077
+      }
+    ],
+    "legitimate_ham": [
+      {
+        "term": "ok",
+        "weight": -2.2373
+      },
+      {
+        "term": "home",
+        "weight": -1.851
+      },
+      {
+        "term": "da",
+        "weight": -1.7793
+      },
+      {
+        "term": "gt",
+        "weight": -1.7491
+      },
+      {
+        "term": "lt",
+        "weight": -1.7406
+      },
+      {
+        "term": "think",
+        "weight": -1.7167
+      },
+      {
+        "term": "lor",
+        "weight": -1.7041
+      },
+      {
+        "term": "got",
+        "weight": -1.6271
+      },
+      {
+        "term": "ll",
+        "weight": -1.6224
+      },
+      {
+        "term": "sorry",
+        "weight": -1.6057
+      },
+      {
+        "term": "later",
+        "weight": -1.5962
+      },
+      {
+        "term": "way",
+        "weight": -1.5849
+      },
+      {
+        "term": "lt gt",
+        "weight": -1.5261
+      },
+      {
+        "term": "don",
+        "weight": -1.5172
+      },
+      {
+        "term": "come",
+        "weight": -1.5128
+      },
+      {
+        "term": "oh",
+        "weight": -1.4224
+      },
+      {
+        "term": "lol",
+        "weight": -1.3724
+      },
+      {
+        "term": "hey",
+        "weight": -1.3656
+      },
+      {
+        "term": "going",
+        "weight": -1.3331
+      },
+      {
+        "term": "doing",
+        "weight": -1.3295
+      }
+    ]
+  },
+  "split_method": "Stratified 80/20 train/test split, random_state=42"
+}

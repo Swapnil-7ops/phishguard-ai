@@ -1,0 +1,370 @@
+{% extends "base.html" %}
+
+{% block title %}QR / Quishing Analyzer — PhishGuard AI{% endblock %}
+{% block page_title %}QR / Quishing Detector{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <!-- ── Page Header ── -->
+  <div style="margin-bottom: 28px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <span style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--coral);">QR CODE ANALYSIS</span>
+    </div>
+    <h1 style="font-family:var(--font-display); font-size:28px; font-weight:800; color:var(--teal); margin:0 0 8px 0; line-height:1.2;">
+      SCAN A QR CODE
+    </h1>
+    <p style="font-size:13px; color:var(--text-secondary); line-height:1.7; max-width:600px; margin:0;">
+      Upload a QR code image and PhishGuard will decode the destination URL and pass it through the full URL analysis pipeline — without ever visiting or fetching the target address.
+    </p>
+  </div>
+
+  <!-- ── Upload Card ── -->
+  <div class="pg-card" style="margin-bottom:24px;">
+    <div class="card-header-clean">
+      <div>
+        <span class="section-label" style="margin-bottom:4px;">Quishing Protection</span>
+        <div class="card-title-lg">Upload QR Code Image</div>
+      </div>
+      <div style="font-size:11px; color:var(--aqua); text-transform:uppercase; letter-spacing:1px; font-weight:700;">PNG · JPG · WEBP · max 10 MB</div>
+    </div>
+
+    <!-- Dropzone -->
+    <div id="qr-dropzone"
+         style="border:2px dashed var(--border-color); background:var(--cream-light); border-radius:var(--radius-sm); padding:48px 24px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;"
+         onmouseover="this.style.borderColor='var(--coral)'"
+         onmouseout="this.style.borderColor='var(--border-color)'"
+         ondragover="event.preventDefault(); this.style.borderColor='var(--coral)'; this.style.background='var(--cream-dark)';"
+         ondragleave="this.style.borderColor='var(--border-color)'; this.style.background='var(--cream-light)';"
+         ondrop="handleQrDrop(event)">
+
+      <!-- Image Preview -->
+      <div id="qr-preview-wrap" style="display:none; margin-bottom:16px;">
+        <img id="qr-preview-img" src="" alt="QR Preview"
+             style="max-width:200px; max-height:200px; border:2px solid var(--teal); object-fit:contain; background:#fff; padding:6px;">
+      </div>
+
+      <div id="qr-dropzone-icon" style="font-size:48px; margin-bottom:12px; line-height:1;">◫</div>
+      <div style="font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--teal); margin-bottom:4px;">DROP QR IMAGE HERE</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">or click to choose a file</div>
+
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="btn-cyber" onclick="document.getElementById('qr-file-input').click();" style="font-size:13px; padding:10px 24px;">
+          CHOOSE IMAGE
+        </button>
+        <button type="button" id="qr-clear-btn" class="btn-secondary" onclick="clearQrUpload()" style="display:none; font-size:13px; padding:10px 18px;">
+          CLEAR
+        </button>
+      </div>
+
+      <input type="file" id="qr-file-input" accept="image/png,image/jpeg,image/webp,image/gif,image/bmp" style="display:none;" onchange="onQrFileSelect(event)">
+    </div>
+
+    <!-- Status bar -->
+    <div id="qr-status" style="margin-top:14px; text-align:center; font-size:13px; font-weight:600; min-height:20px;"></div>
+  </div>
+
+  <!-- ── Results Section ── -->
+  <div id="qr-result-section" style="display:none;">
+
+    <!-- Decoded Payload Card -->
+    <div class="pg-card" style="margin-bottom:20px; border-left:4px solid var(--aqua);">
+      <div class="card-header-clean" style="margin-bottom:10px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Decoded Securely</span>
+          <div class="card-title-lg">QR Payload</div>
+        </div>
+        <div id="qr-payload-type-badge" style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding:4px 10px; border:1.5px solid var(--aqua); color:var(--aqua);">URL</div>
+      </div>
+      <div id="qr-extracted-payload"
+           style="background:var(--cream-dark); border:1.5px solid var(--border-color); border-left:3px solid var(--teal); padding:14px 16px; font-family:var(--font-mono); font-size:13px; word-break:break-all; color:var(--teal); line-height:1.5;">
+        –
+      </div>
+      <div style="margin-top:10px; font-size:11.5px; color:var(--text-muted); line-height:1.6;">
+        <strong>Security Notice:</strong> PhishGuard AI does not navigate to, fetch, or render the decoded URL.
+        All analysis is performed using static lexical and structural inspection.
+      </div>
+    </div>
+
+    <!-- Text / Dangerous Scheme message (shown when payload is not a URL) -->
+    <div id="qr-non-url-card" style="display:none;">
+      <div class="pg-card" style="border-left:4px solid var(--terracotta);">
+        <div style="font-family:var(--font-display); font-size:13px; font-weight:700; color:var(--terracotta); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">No URL Analysis Performed</div>
+        <div id="qr-non-url-reason" style="font-size:13px; color:var(--text-secondary); line-height:1.7;"></div>
+      </div>
+    </div>
+
+    <!-- URL Analysis Result Card -->
+    <div id="qr-url-card" style="display:none;">
+
+      <!-- Risk Hero -->
+      <div class="result-hero" style="margin-bottom:20px;">
+        <div class="gauge-card">
+          <div id="res-risk-circle" class="risk-circle Low">
+            <div id="res-risk-score" class="risk-number">0</div>
+            <div class="risk-scale">QR URL Risk / 100</div>
+          </div>
+          <div id="res-risk-level" class="badge-risk-level Low">Low Risk</div>
+        </div>
+
+        <div class="verdict-card">
+          <div>
+            <div class="verdict-header">
+              <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Decoded URL Verdict</div>
+              <div id="res-verdict-badge" class="verdict-badge Legitimate">LEGITIMATE</div>
+            </div>
+            <div style="font-size:13px; color:var(--text-secondary); margin-top:6px;">
+              Analyzed URL: <code id="res-analyzed-url" style="color:var(--teal); font-size:12px; word-break:break-all;"></code>
+            </div>
+          </div>
+
+          <div class="recommendation-box">
+            <div style="font-weight:700; font-size:12px; text-transform:uppercase; color:var(--teal); margin-bottom:4px; letter-spacing:0.5px;">Security Recommendation</div>
+            <div id="res-recommendation" class="recommendation-text">No threat indicators observed.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ML + Rules Evidence -->
+      <div class="pg-card" style="margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:14px;">
+          <div class="card-title-lg">ML & Rule Evidence</div>
+          <div style="font-size:11px; color:var(--aqua); font-weight:700; text-transform:uppercase; letter-spacing:1px;">Existing URL Pipeline</div>
+        </div>
+        <div id="res-rules-list" class="indicators-list"></div>
+      </div>
+
+      <!-- Reasons List -->
+      <div class="pg-card" style="margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:14px;">
+          <div class="card-title-lg">Detection Reasons</div>
+        </div>
+        <ul id="res-reasons-list" style="list-style:none; padding:0; margin:0;"></ul>
+      </div>
+
+      <!-- ── Phase 9 Explanation Sections (for QR) ── -->
+
+      <!-- WHY WAS THIS FLAGGED? -->
+      <div id="p9-why-flagged" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:14px; border-bottom:2px solid var(--coral); padding-bottom:12px;">
+          <div>
+            <span class="section-label" style="color:var(--coral); margin-bottom:4px;">Investigation Report</span>
+            <div class="card-title-lg">WHY WAS THIS FLAGGED?</div>
+          </div>
+        </div>
+        <div id="p9-why-list"></div>
+      </div>
+
+      <!-- WHAT DOES THIS MEAN? -->
+      <div id="p9-what-means" class="pg-card" style="display:none; margin-bottom:20px; border-left:4px solid var(--terracotta);">
+        <div class="card-header-clean" style="margin-bottom:12px;">
+          <div class="card-title-lg" style="color:var(--terracotta);">WHAT DOES THIS MEAN?</div>
+        </div>
+        <p id="p9-what-text" style="font-size:13px; color:var(--text-secondary); line-height:1.8; margin:0;"></p>
+      </div>
+
+      <!-- RISK CONTRIBUTION -->
+      <div id="p9-risk-contrib" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:16px;">
+          <div class="card-title-lg">RISK CONTRIBUTION</div>
+          <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">min(100, ML×60 + Rules×40)</div>
+        </div>
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:12px; text-align:center;">
+          <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:16px 12px; border-radius:var(--radius-sm);">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:1px; margin-bottom:6px;">ML Component</div>
+            <div id="p9-ml-pts" style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--teal);">—</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">pts / max</div>
+          </div>
+          <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:16px 12px; border-radius:var(--radius-sm);">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700; letter-spacing:1px; margin-bottom:6px;">Rule Component</div>
+            <div id="p9-rule-pts" style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--terracotta);">—</div>
+            <div style="font-size:10px; color:var(--text-muted); margin-top:2px;">pts / max</div>
+          </div>
+          <div style="background:var(--teal); border:1.5px solid var(--teal); padding:16px 12px; border-radius:var(--radius-sm);">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--cream); font-weight:700; letter-spacing:1px; margin-bottom:6px;">Total Score</div>
+            <div id="p9-total-score" style="font-family:var(--font-display); font-size:22px; font-weight:800; color:var(--cream);">—</div>
+            <div style="font-size:10px; color:var(--aqua); margin-top:2px;">out of 100</div>
+          </div>
+        </div>
+        <div id="p9-formula-text" style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-top:12px; padding:8px 12px; background:var(--cream-dark); border-radius:var(--radius-sm);"></div>
+      </div>
+
+      <!-- INVESTIGATION TIMELINE -->
+      <div id="p9-timeline" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:16px;">
+          <div class="card-title-lg">INVESTIGATION TIMELINE</div>
+        </div>
+        <div id="p9-timeline-list"></div>
+      </div>
+
+      <!-- TECHNICAL FEATURE INSPECTOR -->
+      <div id="p9-feature-inspector" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:14px; cursor:pointer;" onclick="toggleSection('p9-inspector-body')">
+          <div class="card-title-lg">TECHNICAL FEATURE INSPECTOR</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:700;">25 URL FEATURES ↕</div>
+        </div>
+        <div id="p9-inspector-body">
+          <div id="p9-inspector-table"></div>
+        </div>
+      </div>
+
+      <!-- GLOBAL MODEL FEATURE IMPORTANCE -->
+      <div id="p9-global-importance" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div class="card-header-clean" style="margin-bottom:14px; cursor:pointer;" onclick="toggleSection('p9-importance-body')">
+          <div class="card-title-lg">GLOBAL MODEL FEATURE IMPORTANCE</div>
+          <div style="font-size:11px; color:var(--text-muted); text-transform:uppercase; letter-spacing:1px; font-weight:700;">RANDOM FOREST ↕</div>
+        </div>
+        <div id="p9-importance-body">
+          <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); border-left:3px solid var(--terracotta); padding:10px 14px; border-radius:var(--radius-sm); font-size:11.5px; color:var(--text-muted); line-height:1.6; margin-bottom:14px;">
+            <strong>Note:</strong> These values reflect the Random Forest model's global feature importance across all training samples.
+            They indicate which features are generally most informative for the classifier.
+            <strong>This is NOT a per-sample explanation for this specific URL.</strong>
+          </div>
+          <div id="p9-importance-list"></div>
+        </div>
+      </div>
+
+      <!-- THREAT INTELLIGENCE (Phase 11) -->
+      <div id="qr-p11-threat-intel" class="pg-card" style="display:none; margin-bottom:20px;">
+        <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua); display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-sm) var(--radius-sm) 0 0;">
+          <div>
+            <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">External Enrichment</div>
+            <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">THREAT INTELLIGENCE</div>
+          </div>
+          <span id="qr-p11-ti-status-badge" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border: 2px solid var(--aqua); border-radius: 2px; color: var(--aqua);"></span>
+        </div>
+        <div id="qr-p11-ti-body" style="padding: 18px 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+      </div>
+
+    </div><!-- end qr-url-card -->
+  </div><!-- end qr-result-section -->
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/analyzer.js"></script>
+<script>
+function handleQrDrop(event) {
+  event.preventDefault();
+  event.currentTarget.style.borderColor = 'var(--border-color)';
+  event.currentTarget.style.background = 'var(--cream-light)';
+  const files = event.dataTransfer.files;
+  if (files && files.length > 0) {
+    const input = document.getElementById('qr-file-input');
+    const dt = new DataTransfer();
+    dt.items.add(files[0]);
+    input.files = dt.files;
+    loadQrPreview(files[0]);
+    handleQrUpload(files[0]);
+  }
+}
+
+function onQrFileSelect(event) {
+  const file = event.target.files[0];
+  if (file) {
+    loadQrPreview(file);
+    handleQrUpload(file);
+  }
+}
+
+function loadQrPreview(file) {
+  const reader = new FileReader();
+  reader.onload = (e) => {
+    const img = document.getElementById('qr-preview-img');
+    img.src = e.target.result;
+    document.getElementById('qr-preview-wrap').style.display = 'block';
+    document.getElementById('qr-clear-btn').style.display = 'inline-flex';
+  };
+  reader.readAsDataURL(file);
+}
+
+function clearQrUpload() {
+  document.getElementById('qr-file-input').value = '';
+  document.getElementById('qr-preview-wrap').style.display = 'none';
+  document.getElementById('qr-preview-img').src = '';
+  document.getElementById('qr-clear-btn').style.display = 'none';
+  document.getElementById('qr-status').textContent = '';
+  document.getElementById('qr-result-section').style.display = 'none';
+}
+
+function toggleSection(id) {
+  const el = document.getElementById(id);
+  if (el) el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function handleQrUpload(file) {
+  const formData = new FormData();
+  formData.append('image', file);
+
+  const statusEl = document.getElementById('qr-status');
+  statusEl.textContent = 'Decoding QR code…';
+  statusEl.style.color = 'var(--teal)';
+
+  try {
+    const res = await fetch('/api/analyze-qr', { method: 'POST', body: formData });
+    const json = await res.json();
+
+    if (!json.success) {
+      statusEl.textContent = json.error || 'Failed to decode QR code.';
+      statusEl.style.color = 'var(--coral)';
+      showToast(json.error || 'QR decode failed.', 'error');
+      return;
+    }
+
+    const data = json.data;
+    statusEl.textContent = data.qr_detected
+      ? '✓ QR Code Decoded Successfully'
+      : '✗ No QR code detected.';
+    statusEl.style.color = data.qr_detected ? 'var(--teal)' : 'var(--coral)';
+
+    document.getElementById('qr-result-section').style.display = 'block';
+    document.getElementById('qr-result-section').scrollIntoView({ behavior: 'smooth' });
+
+    // Payload display
+    const payloadEl = document.getElementById('qr-extracted-payload');
+    payloadEl.textContent = data.decoded_payload || '(no payload)';
+
+    // Payload type badge
+    const badge = document.getElementById('qr-payload-type-badge');
+    const payloadType = (data.payload_type || 'text').toUpperCase();
+    badge.textContent = payloadType;
+    badge.style.borderColor = payloadType === 'URL' ? 'var(--teal)' : (payloadType === 'DANGEROUS_SCHEME' ? 'var(--coral)' : 'var(--aqua)');
+    badge.style.color = payloadType === 'URL' ? 'var(--teal)' : (payloadType === 'DANGEROUS_SCHEME' ? 'var(--coral)' : 'var(--aqua)');
+
+    if (data.payload_type === 'url' && data.url_analysis) {
+      document.getElementById('qr-url-card').style.display = 'block';
+      document.getElementById('qr-non-url-card').style.display = 'none';
+
+      // Set analyzed URL
+      document.getElementById('res-analyzed-url').textContent = data.decoded_url || '';
+
+      // Render using the existing URL result renderer
+      renderUrlResults(data.url_analysis);
+
+      // Phase 9 explanation blocks
+      if (data.explanation && data.explanation.scan_type === 'url') {
+        renderP9UrlExplanation(data.explanation);
+      }
+
+      // Phase 11 Threat Intelligence
+      if (typeof renderThreatIntelligence === 'function') {
+        const ti = (data.url_analysis && data.url_analysis.threat_intelligence)
+                   || data.threat_intelligence
+                   || null;
+        renderThreatIntelligence(ti, 'qr-p11');
+      }
+    } else {
+      document.getElementById('qr-url-card').style.display = 'none';
+      document.getElementById('qr-non-url-card').style.display = 'block';
+      document.getElementById('qr-non-url-reason').textContent = data.recommendation || 'Payload is not a web URL — no risk analysis performed.';
+      showToast(data.recommendation || 'QR decoded, but payload is not a URL.', 'info');
+    }
+
+  } catch (err) {
+    statusEl.textContent = 'Network communication error: ' + err;
+    statusEl.style.color = 'var(--coral)';
+  }
+}
+</script>
+{% endblock %}

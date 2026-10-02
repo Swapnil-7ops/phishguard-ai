@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard — PhishGuard AI{% endblock %}
+{% block page_title %}Dashboard{% endblock %}
+
+{% block content %}
+
+<!-- SOC Header -->
+<div class="soc-header">
+  <div>
+    <div class="soc-title">Security Operations Board</div>
+    <div class="soc-meta">Live Scan Telemetry · In-Memory / MongoDB Backed</div>
+  </div>
+  <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+    <a href="/url-analyzer" class="btn-cyber" style="text-decoration: none; font-size: 12px; padding: 10px 20px;">Analyze URL</a>
+    <a href="/message-analyzer" class="btn-cyber-outline-cream" style="text-decoration: none; font-size: 12px; padding: 10px 20px;">Check Message</a>
+    <a href="/history" class="btn-secondary" style="text-decoration: none; padding: 10px 18px; font-size: 12px;">Full Audit Log</a>
+  </div>
+</div>
+
+<!-- Stat Metric Cards -->
+<div class="stats-grid">
+  <div class="stat-card">
+    <div class="stat-label">Total Scans</div>
+    <div class="stat-value" id="stat-total">0</div>
+    <div class="stat-desc">Across all scan vectors</div>
+  </div>
+  <div class="stat-card danger">
+    <div class="stat-label">Phishing Detected</div>
+    <div class="stat-value" id="stat-phish">0</div>
+    <div class="stat-desc">Active threats identified</div>
+  </div>
+  <div class="stat-card success">
+    <div class="stat-label">Legitimate Scans</div>
+    <div class="stat-value" id="stat-legit">0</div>
+    <div class="stat-desc">Benign resources confirmed</div>
+  </div>
+  <div class="stat-card warning">
+    <div class="stat-label">Suspicious</div>
+    <div class="stat-value" id="stat-susp">0</div>
+    <div class="stat-desc">Elevated risk — review needed</div>
+  </div>
+  <div class="stat-card aqua">
+    <div class="stat-label">Avg Risk Score</div>
+    <div class="stat-value" id="stat-avg-risk" style="color: var(--aqua);">0/100</div>
+    <div class="stat-desc">Composite telemetry index</div>
+  </div>
+</div>
+
+<!-- Charts Row 1 -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Threat Classification Distribution</div>
+    <div id="empty-dist" style="display: none; height: 240px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; text-align: center;">
+      <div>No scans recorded yet.<br>Run an analysis to populate.</div>
+    </div>
+    <div id="wrap-dist" style="height: 240px; position: relative;">
+      <canvas id="chart-distribution"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Risk-Level Distribution</div>
+    <div id="empty-risk" style="display: none; height: 240px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; text-align: center;">
+      <div>No risk scores generated yet.</div>
+    </div>
+    <div id="wrap-risk" style="height: 240px; position: relative;">
+      <canvas id="chart-risk-distribution"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row 2 -->
+<div class="charts-grid">
+  <div class="chart-card">
+    <div class="chart-title">Scan Activity — Last 7 Days</div>
+    <div id="empty-timeline" style="display: none; height: 240px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; text-align: center;">
+      <div>No timeline history recorded yet.</div>
+    </div>
+    <div id="wrap-timeline" style="height: 240px; position: relative;">
+      <canvas id="chart-timeline"></canvas>
+    </div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Top Triggered Security Indicators</div>
+    <div id="empty-indicators" style="display: none; height: 240px; display: flex; align-items: center; justify-content: center; color: var(--text-secondary); font-size: 13px; text-align: center;">
+      <div>No indicator rules triggered yet.</div>
+    </div>
+    <div id="wrap-indicators" style="height: 240px; position: relative;">
+      <canvas id="chart-indicators"></canvas>
+    </div>
+  </div>
+</div>
+
+<!-- Quick Launchers -->
+<div class="pg-card">
+  <div class="card-header-clean">
+    <div class="card-title-lg">Quick Launchers</div>
+  </div>
+  <div style="display: flex; gap: 12px; flex-wrap: wrap;">
+    <a href="/url-analyzer" class="btn-cyber" style="text-decoration: none;">Analyze URL</a>
+    <a href="/message-analyzer" class="btn-cyber-teal" style="text-decoration: none;">Analyze Message</a>
+    <a href="/model-performance" class="btn-secondary" style="text-decoration: none; padding: 12px 20px;">Model Metrics</a>
+    <a href="/history" class="btn-secondary" style="text-decoration: none; padding: 12px 20px;">Audit Log</a>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/dashboard.js"></script>
+{% endblock %}

@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Scan History — PhishGuard AI{% endblock %}
+{% block page_title %}Scan History{% endblock %}
+
+{% block content %}
+
+<div class="pg-card">
+  <!-- Header -->
+  <div class="card-header-clean" style="flex-wrap: wrap; gap: 12px; margin-bottom: 24px;">
+    <div>
+      <span class="section-label" style="margin-bottom: 4px;">Investigation Audit Trail</span>
+      <div class="card-title-lg">Historical Scan Records</div>
+      <div style="font-size: 12px; color: var(--text-secondary); margin-top: 4px;">
+        Stored via MongoDB · In-Memory fallback active when offline
+      </div>
+    </div>
+    <button id="btn-export" class="btn-secondary" onclick="exportHistory()">
+      ↓ Export as JSON
+    </button>
+  </div>
+
+  <!-- Filter Bar -->
+  <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px 18px; margin-bottom: 20px; display: flex; gap: 20px; flex-wrap: wrap; align-items: center;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Type:</span>
+      <select id="filter-type" class="cyber-input" style="padding: 6px 12px; font-size: 13px; min-width: 120px; flex: none;" onchange="applyFilters()">
+        <option value="all">All Types</option>
+        <option value="url">URL</option>
+        <option value="message">Message</option>
+        <option value="qr">QR Code</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Verdict:</span>
+      <select id="filter-prediction" class="cyber-input" style="padding: 6px 12px; font-size: 13px; min-width: 140px; flex: none;" onchange="applyFilters()">
+        <option value="all">All Verdicts</option>
+        <option value="Phishing">Phishing</option>
+        <option value="Suspicious">Suspicious</option>
+        <option value="Legitimate">Legitimate</option>
+      </select>
+    </div>
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 1px;">Risk:</span>
+      <select id="filter-risk" class="cyber-input" style="padding: 6px 12px; font-size: 13px; min-width: 130px; flex: none;" onchange="applyFilters()">
+        <option value="all">All Tiers</option>
+        <option value="Low">Low (0–24)</option>
+        <option value="Medium">Medium (25–54)</option>
+        <option value="High">High (55–79)</option>
+        <option value="Critical">Critical (80–100)</option>
+      </select>
+    </div>
+    <button type="button" class="btn-secondary" style="font-size: 12px; padding: 6px 14px;" onclick="resetFilters()">Reset</button>
+  </div>
+
+  <!-- Table -->
+  <div class="data-table-wrapper">
+    <table class="cyber-table">
+      <thead>
+        <tr>
+          <th>Timestamp (UTC)</th>
+          <th>Type</th>
+          <th>Input</th>
+          <th>Verdict</th>
+          <th>ML Prob.</th>
+          <th>Risk Score</th>
+          <th>Indicators</th>
+        </tr>
+      </thead>
+      <tbody id="history-tbody">
+        <tr>
+          <td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 28px;">Loading scan records…</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  <div id="pagination-container" style="display: flex; justify-content: space-between; align-items: center; margin-top: 18px; padding-top: 16px; border-top: 1.5px solid var(--border-color); flex-wrap: wrap; gap: 12px;">
+    <div id="pagination-info" style="font-size: 12px; color: var(--text-secondary);">Showing page 1 of 1</div>
+    <div style="display: flex; gap: 8px;">
+      <button id="btn-prev-page" class="btn-secondary" style="font-size: 12px; padding: 6px 16px;" onclick="changePage(-1)" disabled>« Previous</button>
+      <button id="btn-next-page" class="btn-secondary" style="font-size: 12px; padding: 6px 16px;" onclick="changePage(1)" disabled>Next »</button>
+    </div>
+  </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let currentPage = 1;
+const pageSize = 20;
+let totalPages = 1;
+let currentScans = [];
+
+async function loadHistory(page = 1) {
+  currentPage = page;
+  const scanType   = document.getElementById('filter-type').value;
+  const prediction = document.getElementById('filter-prediction').value;
+  const riskLevel  = document.getElementById('filter-risk').value;
+
+  const params = new URLSearchParams({ page: currentPage, limit: pageSize });
+  if (scanType   && scanType   !== 'all') params.set('type',       scanType);
+  if (prediction && prediction !== 'all') params.set('prediction', prediction);
+  if (riskLevel  && riskLevel  !== 'all') params.set('risk_level', riskLevel);
+
+  try {
+    const res  = await fetch(`/api/history?${params.toString()}`);
+    const json = await res.json();
+    if (!json.success) { showToast(json.error || 'Failed to fetch history', 'error'); return; }
+
+    const data       = json.data;
+    currentScans     = data.scans || [];
+    const pagination = data.pagination || {};
+    totalPages       = pagination.total_pages || 1;
+
+    renderTable(currentScans, pagination.total || 0);
+    updatePaginationControls(currentPage, totalPages, pagination.total || 0);
+  } catch (err) {
+    showToast('Network error loading history.', 'error');
+  }
+}
+
+function renderTable(scans, totalCount) {
+  const tbody = document.getElementById('history-tbody');
+  tbody.innerHTML = '';
+
+  if (scans.length === 0) {
+    const isFiltered = (
+      document.getElementById('filter-type').value       !== 'all' ||
+      document.getElementById('filter-prediction').value !== 'all' ||
+      document.getElementById('filter-risk').value       !== 'all'
+    );
+    const msg = isFiltered
+      ? 'No scans match the selected filters.'
+      : 'No scans yet. Run an analysis in the URL or Message Analyzer to generate records.';
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-secondary); padding: 32px; font-size: 13px;">${msg}</td></tr>`;
+    return;
+  }
+
+  scans.forEach(s => {
+    const tr      = document.createElement('tr');
+    const timeStr = s.timestamp ? s.timestamp.replace('T', ' ').slice(0, 19) : 'N/A';
+    const rawPred = s.prediction || 'Unknown';
+
+    // Verdict badge class
+    let badgeCls = 'badge-risk-level Low';
+    if      (rawPred === 'Phishing')   badgeCls = 'badge-risk-level Critical';
+    else if (rawPred === 'Suspicious') badgeCls = 'badge-risk-level Medium';
+    else if (rawPred === 'Legitimate') badgeCls = 'badge-risk-level Low';
+
+    // ML probability
+    const mlProbVal = (s.ml_probability !== undefined && s.ml_probability !== null)
+      ? s.ml_probability : s.confidence;
+    const mlDisplay = (mlProbVal !== null && mlProbVal !== undefined)
+      ? (mlProbVal * 100).toFixed(1) + '%' : '—';
+
+    // Indicators
+    const indList       = s.triggered_rules || s.detected_indicators || [];
+    const indicatorsText = indList.length
+      ? indList.slice(0, 2).join(', ') + (indList.length > 2 ? ` (+${indList.length - 2})` : '')
+      : '—';
+
+    const inputType   = s.scan_type || s.input_type || 'url';
+    const displayInput = s.input || s.original_input || '';
+
+    // Risk score color
+    const riskColor = s.risk_score >= 55
+      ? 'var(--coral)'
+      : (s.risk_score >= 25 ? 'var(--terracotta)' : 'var(--teal)');
+
+    tr.innerHTML = `
+      <td style="font-family: var(--font-mono); font-size: 11px; color: var(--text-secondary); white-space: nowrap;">${timeStr}</td>
+      <td><span style="font-family: var(--font-display); font-size: 11px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); background: var(--cream-dark); padding: 2px 8px; border-radius: var(--radius-sm);">${escapeHtml(inputType)}</span></td>
+      <td style="font-family: var(--font-mono); font-size: 12px; word-break: break-all; max-width: 300px; color: var(--teal);">${escapeHtml(displayInput)}</td>
+      <td><span class="${badgeCls}" style="font-size: 11px; padding: 2px 10px;">${escapeHtml(rawPred)}</span></td>
+      <td style="font-family: var(--font-mono); font-size: 12px; color: var(--text-secondary);">${mlDisplay}</td>
+      <td><strong style="font-family: var(--font-display); font-size: 15px; font-weight: 800; color: ${riskColor};">${s.risk_score}/100</strong></td>
+      <td style="font-size: 12px; color: var(--text-secondary);">${escapeHtml(indicatorsText)}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+}
+
+function updatePaginationControls(page, total, totalCount) {
+  document.getElementById('pagination-info').textContent =
+    `Page ${page} of ${total} (${totalCount} total ${totalCount === 1 ? 'record' : 'records'})`;
+  document.getElementById('btn-prev-page').disabled = (page <= 1);
+  document.getElementById('btn-next-page').disabled = (page >= total);
+}
+
+function changePage(delta) {
+  const target = currentPage + delta;
+  if (target >= 1 && target <= totalPages) loadHistory(target);
+}
+
+function applyFilters() { loadHistory(1); }
+
+function resetFilters() {
+  document.getElementById('filter-type').value       = 'all';
+  document.getElementById('filter-prediction').value = 'all';
+  document.getElementById('filter-risk').value       = 'all';
+  loadHistory(1);
+}
+
+async function exportHistory() {
+  try {
+    const scanType   = document.getElementById('filter-type').value;
+    const prediction = document.getElementById('filter-prediction').value;
+    const riskLevel  = document.getElementById('filter-risk').value;
+    const params = new URLSearchParams({ limit: 200, page: 1 });
+    if (scanType   && scanType   !== 'all') params.set('type',       scanType);
+    if (prediction && prediction !== 'all') params.set('prediction', prediction);
+    if (riskLevel  && riskLevel  !== 'all') params.set('risk_level', riskLevel);
+
+    const res  = await fetch(`/api/history?${params.toString()}`);
+    const json = await res.json();
+    const exportScans = (json.success && json.data && json.data.scans) ? json.data.scans : [];
+
+    if (exportScans.length === 0) { showToast('No records to export.', 'warning'); return; }
+
+    const cleanScans = exportScans.map(s => ({
+      scan_id:          s.scan_id,
+      timestamp:        s.timestamp,
+      scan_type:        s.scan_type || s.input_type,
+      input:            s.input || s.original_input,
+      prediction:       s.prediction,
+      risk_score:       s.risk_score,
+      risk_level:       s.risk_level,
+      ml_probability:   s.ml_probability,
+      model:            s.model,
+      triggered_rules:  s.triggered_rules || s.detected_indicators || [],
+      recommendation:   s.recommendation || '',
+      analysis_version: s.analysis_version || s.model_version || '1.0.0'
+    }));
+
+    const dataStr = 'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(cleanScans, null, 2));
+    const a = document.createElement('a');
+    a.setAttribute('href', dataStr);
+    a.setAttribute('download', `phishguard_audit_${new Date().toISOString().slice(0,10)}.json`);
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    showToast('Audit log exported.', 'success');
+  } catch (err) {
+    showToast('Export failed: ' + err, 'error');
+  }
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+document.addEventListener('DOMContentLoaded', () => loadHistory(1));
+</script>
+{% endblock %}

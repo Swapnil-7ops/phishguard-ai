@@ -1,0 +1,356 @@
+{% extends "base.html" %}
+
+{% block title %}Model Performance — PhishGuard AI{% endblock %}
+{% block page_title %}Model Performance{% endblock %}
+
+{% block content %}
+<div style="max-width: 1100px; margin: 0 auto;">
+
+  <!-- Academic notice -->
+  <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-left: 4px solid var(--aqua); padding: 16px 22px; border-radius: var(--radius-sm); margin-bottom: 32px;">
+    <div style="font-family: var(--font-display); font-weight: 700; font-size: 12px; text-transform: uppercase; letter-spacing: 1px; color: var(--teal); margin-bottom: 4px;">
+      Academic Note: Offline Evaluation Metrics
+    </div>
+    <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+      Statistics on this page represent <strong>offline holdout evaluation</strong> computed on stratified 20% test splits during training.
+      They measure overall generalisation capability and are distinct from the individual scan confidence of any specific URL or message analysis.
+    </p>
+  </div>
+
+  <!-- ───────────── URL MODEL ───────────── -->
+  <div style="margin-bottom: 40px;">
+    <div class="model-section-header">
+      <div>
+        <div class="model-section-title">URL Classifier</div>
+        <div style="font-size: 12px; color: var(--aqua); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">Random Forest · 100 Trees · 25 Features</div>
+      </div>
+      <div>
+        <span id="url-model-status-badge" class="model-section-meta">Trained</span>
+        <div id="url-dataset-name" style="font-size: 11px; color: var(--aqua); margin-top: 4px; text-align: right;">Loading…</div>
+      </div>
+    </div>
+
+    <div style="background-color: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; border-radius: 0 0 var(--radius-md) var(--radius-md); padding: 28px;">
+
+      <!-- 4 Metrics -->
+      <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Holdout Accuracy</div>
+          <div class="stat-value" id="url-accuracy">—</div>
+          <div class="stat-desc">Stratified 20% test split</div>
+        </div>
+        <div class="stat-card aqua">
+          <div class="stat-label">Precision (Phishing)</div>
+          <div class="stat-value" id="url-precision" style="color: var(--teal);">—</div>
+          <div class="stat-desc">TP / (TP + FP)</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-label">Recall (Sensitivity)</div>
+          <div class="stat-value" id="url-recall">—</div>
+          <div class="stat-desc">TP / (TP + FN)</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-label">F1-Score</div>
+          <div class="stat-value" id="url-f1" style="color: var(--terracotta);">—</div>
+          <div class="stat-desc">2·(P·R)/(P+R)</div>
+        </div>
+      </div>
+
+      <!-- Multi-model comparison table -->
+      <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px; margin-bottom: 24px;">
+        <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--teal); margin-bottom: 14px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <span>Multi-Model Comparison (Identical 80/20 Split)</span>
+          <span style="font-size: 11px; color: var(--aqua); font-weight: 600; text-transform: uppercase; letter-spacing: 1px;">Holdout Test Split</span>
+        </div>
+        <div style="overflow-x: auto;">
+          <table style="width: 100%; font-size: 13px; border-collapse: collapse; text-align: left;">
+            <thead>
+              <tr style="border-bottom: 2px solid var(--border-color);">
+                <th style="padding: 8px 12px; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Algorithm</th>
+                <th style="padding: 8px 12px; text-align: right; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Accuracy</th>
+                <th style="padding: 8px 12px; text-align: right; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Precision</th>
+                <th style="padding: 8px 12px; text-align: right; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Recall</th>
+                <th style="padding: 8px 12px; text-align: right; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">F1</th>
+                <th style="padding: 8px 12px; text-align: center; color: var(--text-secondary); font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px;">Status</th>
+              </tr>
+            </thead>
+            <tbody id="model-comparison-tbody">
+              <tr><td colspan="6" style="padding: 12px; text-align: center; color: var(--text-secondary);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Confusion Matrix + Pipeline Attributes -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px;">
+          <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Confusion Matrix (Holdout)</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+            <div style="background: rgba(36,72,85,0.08); border: 1.5px solid rgba(36,72,85,0.2); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">True Negative</div>
+              <div id="cm-tn" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--teal);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Legit correctly flagged</div>
+            </div>
+            <div style="background: rgba(135,79,65,0.1); border: 1.5px solid rgba(135,79,65,0.25); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">False Positive</div>
+              <div id="cm-fp" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--terracotta);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Legit as Phishing</div>
+            </div>
+            <div style="background: rgba(230,72,51,0.1); border: 1.5px solid rgba(230,72,51,0.25); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">False Negative</div>
+              <div id="cm-fn" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--coral);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Missed phishing</div>
+            </div>
+            <div style="background: rgba(144,174,173,0.15); border: 1.5px solid rgba(144,174,173,0.35); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">True Positive</div>
+              <div id="cm-tp" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--teal);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Phishing detected</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px;">
+          <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Dataset &amp; Pipeline</div>
+          <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Total Samples</td><td id="meta-total-samples" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Training (80%)</td><td id="meta-train-samples" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Testing (20%)</td><td id="meta-test-samples" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Feature Dimensions</td><td style="text-align: right; font-weight: 700; color: var(--aqua);">25</td></tr>
+            <tr><td style="padding: 7px 0; color: var(--text-secondary);">Algorithm</td><td style="text-align: right; font-weight: 700; color: var(--teal); font-family: var(--font-mono); font-size: 12px;">RandomForestClassifier</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Feature Importance -->
+      <div>
+        <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Top Gini Feature Importances</div>
+        <div id="feature-importance-bars" style="display: flex; flex-direction: column; gap: 10px;"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────── TEXT MODEL ───────────── -->
+  <div style="margin-bottom: 40px;">
+    <div class="model-section-header" style="background-color: var(--terracotta);">
+      <div>
+        <div class="model-section-title">Message Classifier</div>
+        <div style="font-size: 12px; color: rgba(251,233,208,0.8); margin-top: 2px; text-transform: uppercase; letter-spacing: 1px; font-weight: 600;">TF-IDF + Logistic Regression · UCI SMS Spam Collection</div>
+      </div>
+      <span id="text-model-status-badge" class="model-section-meta" style="border-color: rgba(251,233,208,0.3); color: var(--cream);">Trained</span>
+    </div>
+
+    <div style="background-color: var(--cream-light); border: 1.5px solid var(--border-color); border-top: none; border-radius: 0 0 var(--radius-md) var(--radius-md); padding: 28px;">
+      <div id="text-model-subtitle" style="font-size: 12px; color: var(--text-secondary); margin-bottom: 20px;">SMS Spam/Malicious Message Classifier</div>
+
+      <!-- 4 Metrics -->
+      <div class="stats-grid" style="margin-bottom: 24px;">
+        <div class="stat-card">
+          <div class="stat-label">Holdout Accuracy</div>
+          <div class="stat-value" id="text-accuracy">—</div>
+          <div class="stat-desc">Stratified 20% test split</div>
+        </div>
+        <div class="stat-card aqua">
+          <div class="stat-label">Precision (Malicious)</div>
+          <div class="stat-value" id="text-precision" style="color: var(--teal);">—</div>
+          <div class="stat-desc">TP / (TP + FP)</div>
+        </div>
+        <div class="stat-card success">
+          <div class="stat-label">Recall (Sensitivity)</div>
+          <div class="stat-value" id="text-recall">—</div>
+          <div class="stat-desc">TP / (TP + FN)</div>
+        </div>
+        <div class="stat-card warning">
+          <div class="stat-label">F1-Score</div>
+          <div class="stat-value" id="text-f1" style="color: var(--terracotta);">—</div>
+          <div class="stat-desc">2·(P·R)/(P+R)</div>
+        </div>
+      </div>
+
+      <!-- Confusion Matrix + Corpus Specs -->
+      <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-bottom: 24px;">
+        <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px;">
+          <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Confusion Matrix (SMS Corpus)</div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; text-align: center;">
+            <div style="background: rgba(36,72,85,0.08); border: 1.5px solid rgba(36,72,85,0.2); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">True Negative</div>
+              <div id="text-cm-tn" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--teal);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Ham correctly flagged</div>
+            </div>
+            <div style="background: rgba(135,79,65,0.1); border: 1.5px solid rgba(135,79,65,0.25); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">False Positive</div>
+              <div id="text-cm-fp" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--terracotta);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Ham as Spam</div>
+            </div>
+            <div style="background: rgba(230,72,51,0.1); border: 1.5px solid rgba(230,72,51,0.25); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">False Negative</div>
+              <div id="text-cm-fn" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--coral);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Missed spam</div>
+            </div>
+            <div style="background: rgba(144,174,173,0.15); border: 1.5px solid rgba(144,174,173,0.35); padding: 14px; border-radius: var(--radius-sm);">
+              <div style="font-size: 10px; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 700; margin-bottom: 4px;">True Positive</div>
+              <div id="text-cm-tp" style="font-family: var(--font-display); font-size: 28px; font-weight: 800; color: var(--teal);">0</div>
+              <div style="font-size: 10px; color: var(--text-secondary);">Malicious detected</div>
+            </div>
+          </div>
+        </div>
+
+        <div style="background-color: var(--cream-dark); border: 1.5px solid var(--border-color); border-radius: var(--radius-sm); padding: 20px;">
+          <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Corpus &amp; Pipeline</div>
+          <table style="width: 100%; font-size: 13px; border-collapse: collapse;">
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Total Messages</td><td id="text-meta-total" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Training (80%)</td><td id="text-meta-train" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">Testing (20%)</td><td id="text-meta-test" style="text-align: right; font-weight: 700; color: var(--teal);">—</td></tr>
+            <tr style="border-bottom: 1px solid var(--border-color);"><td style="padding: 7px 0; color: var(--text-secondary);">TF-IDF Vocabulary</td><td style="text-align: right; font-weight: 700; color: var(--aqua); font-family: var(--font-mono); font-size: 12px;">3,000 (1-2 ngrams)</td></tr>
+            <tr><td style="padding: 7px 0; color: var(--text-secondary);">Classifier</td><td style="text-align: right; font-weight: 700; color: var(--teal); font-family: var(--font-mono); font-size: 12px;">LogisticRegression</td></tr>
+          </table>
+        </div>
+      </div>
+
+      <!-- Top Indicative Terms -->
+      <div>
+        <div style="font-family: var(--font-display); font-weight: 700; font-size: 13px; text-transform: uppercase; color: var(--teal); margin-bottom: 14px; letter-spacing: 0.5px;">Top Adversarial Vocabulary (Log-Odds Coefficients)</div>
+        <div id="text-top-terms-list" style="display: flex; flex-wrap: wrap; gap: 8px;"></div>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function loadMetrics() {
+  try {
+    const res  = await fetch('/api/model-metrics');
+    const json = await res.json();
+    if (!json.success) return;
+
+    const data = json.data;
+
+    // ── URL Model ──
+    if (data.url_model) {
+      const u = data.url_model;
+      document.getElementById('url-dataset-name').textContent = 'Dataset: ' + (u.dataset_name || 'phishing_urls.csv');
+      document.getElementById('url-model-status-badge').textContent = 'Trained';
+      document.getElementById('url-accuracy').textContent  = (u.accuracy  * 100).toFixed(1) + '%';
+      document.getElementById('url-precision').textContent = (u.precision * 100).toFixed(1) + '%';
+      document.getElementById('url-recall').textContent    = (u.recall    * 100).toFixed(1) + '%';
+      document.getElementById('url-f1').textContent        = (u.f1_score  * 100).toFixed(1) + '%';
+
+      document.getElementById('meta-total-samples').textContent = u.total_samples || '—';
+      document.getElementById('meta-train-samples').textContent = u.train_samples  || '—';
+      document.getElementById('meta-test-samples').textContent  = u.test_samples   || '—';
+
+      const cm = u.confusion_matrix || {};
+      document.getElementById('cm-tn').textContent = cm.true_negative  ?? 0;
+      document.getElementById('cm-fp').textContent = cm.false_positive ?? 0;
+      document.getElementById('cm-fn').textContent = cm.false_negative ?? 0;
+      document.getElementById('cm-tp').textContent = cm.true_positive  ?? 0;
+
+      // Comparison table
+      const compBody = document.getElementById('model-comparison-tbody');
+      if (compBody && u.comparison && u.comparison.length > 0) {
+        compBody.innerHTML = '';
+        u.comparison.forEach(m => {
+          const isPrimary = m.model === (u.primary_model || 'Random Forest');
+          const row = document.createElement('tr');
+          row.style.borderBottom = '1px solid var(--border-color)';
+          if (isPrimary) row.style.backgroundColor = 'rgba(36,72,85,0.05)';
+          row.innerHTML = `
+            <td style="padding: 10px 12px; font-family: var(--font-display); font-weight: ${isPrimary ? '800' : '500'}; color: var(--teal);">
+              ${m.model}${isPrimary ? ' <span style="font-size: 10px; background: var(--teal); color: var(--cream); padding: 1px 7px; border-radius: 3px; margin-left: 6px; font-weight: 700;">PRIMARY</span>' : ''}
+            </td>
+            <td style="padding: 10px 12px; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--teal);">${(m.accuracy  * 100).toFixed(2)}%</td>
+            <td style="padding: 10px 12px; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--aqua);">${(m.precision * 100).toFixed(2)}%</td>
+            <td style="padding: 10px 12px; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--teal);">${(m.recall    * 100).toFixed(2)}%</td>
+            <td style="padding: 10px 12px; text-align: right; font-family: var(--font-mono); font-size: 12px; color: var(--terracotta);">${(m.f1_score  * 100).toFixed(2)}%</td>
+            <td style="padding: 10px 12px; text-align: center;"><span style="font-family: var(--font-display); font-size: 10px; font-weight: 700; background: var(--teal); color: var(--cream); padding: 2px 10px; border-radius: 3px;">Trained</span></td>
+          `;
+          compBody.appendChild(row);
+        });
+      }
+
+      // Feature importance bars
+      const fiContainer = document.getElementById('feature-importance-bars');
+      fiContainer.innerHTML = '';
+      if (u.feature_importance && u.feature_importance.length > 0) {
+        const maxVal = u.feature_importance[0].importance || 1.0;
+        u.feature_importance.slice(0, 8).forEach(item => {
+          const pct = ((item.importance / maxVal) * 100).toFixed(1);
+          const barDiv = document.createElement('div');
+          barDiv.innerHTML = `
+            <div style="display: flex; justify-content: space-between; font-size: 12px; margin-bottom: 4px;">
+              <span style="font-family: var(--font-mono); color: var(--teal);">${item.feature}</span>
+              <span style="color: var(--aqua); font-weight: 700; font-family: var(--font-mono);">${item.importance.toFixed(4)}</span>
+            </div>
+            <div style="height: 6px; background: var(--cream-dark); border-radius: 999px; overflow: hidden; margin-bottom: 4px;">
+              <div style="width: ${pct}%; height: 100%; background: linear-gradient(90deg, var(--teal), var(--aqua)); border-radius: 999px; transition: width 0.6s ease;"></div>
+            </div>
+          `;
+          fiContainer.appendChild(barDiv);
+        });
+      } else {
+        fiContainer.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px;">Feature importances will appear after model training.</div>';
+      }
+    } else {
+      document.getElementById('url-dataset-name').textContent = 'Model training pending';
+      document.getElementById('url-model-status-badge').textContent = 'Pending';
+    }
+
+    // ── Text Model ──
+    if (data.text_model) {
+      const t      = data.text_model;
+      const tDs    = t.dataset || {};
+      const tCm    = t.confusion_matrix || {};
+
+      document.getElementById('text-model-subtitle').textContent = `Dataset: ${tDs.name || 'UCI SMS Spam Collection'} · SMS Spam/Malicious Message Classifier`;
+      document.getElementById('text-model-status-badge').textContent = 'Trained';
+      document.getElementById('text-accuracy').textContent  = (t.accuracy  * 100).toFixed(1) + '%';
+      document.getElementById('text-precision').textContent = (t.precision * 100).toFixed(1) + '%';
+      document.getElementById('text-recall').textContent    = (t.recall    * 100).toFixed(1) + '%';
+      document.getElementById('text-f1').textContent        = (t.f1_score  * 100).toFixed(1) + '%';
+
+      document.getElementById('text-cm-tn').textContent = tCm.true_negative  ?? 0;
+      document.getElementById('text-cm-fp').textContent = tCm.false_positive ?? 0;
+      document.getElementById('text-cm-fn').textContent = tCm.false_negative ?? 0;
+      document.getElementById('text-cm-tp').textContent = tCm.true_positive  ?? 0;
+
+      document.getElementById('text-meta-total').textContent = (tDs.total_cleaned_samples || t.total_samples || '—').toLocaleString();
+      document.getElementById('text-meta-train').textContent = (tDs.train_samples || t.train_samples || '—').toLocaleString();
+      document.getElementById('text-meta-test').textContent  = (tDs.test_samples  || t.test_samples  || '—').toLocaleString();
+
+      // Top terms
+      const termsList = document.getElementById('text-top-terms-list');
+      if (termsList) {
+        termsList.innerHTML = '';
+        const topTerms = (t.top_indicative_terms && t.top_indicative_terms.spam_malicious) || t.top_phishing_words || [];
+        if (topTerms.length > 0) {
+          topTerms.slice(0, 18).forEach(item => {
+            const chip = document.createElement('div');
+            chip.className = 'feature-pill';
+            chip.style.display = 'inline-flex';
+            chip.style.alignItems = 'center';
+            chip.style.gap = '8px';
+            chip.innerHTML = `
+              <span style="color: var(--teal); font-family: var(--font-mono); font-weight: 700;">${item.term}</span>
+              <span style="color: var(--aqua); font-size: 11px; background: rgba(144,174,173,0.2); padding: 1px 7px; border-radius: 3px; font-weight: 700;">+${item.weight}</span>
+            `;
+            termsList.appendChild(chip);
+          });
+        } else {
+          termsList.innerHTML = '<div style="color: var(--text-secondary); font-size: 13px;">No vocabulary coefficients available.</div>';
+        }
+      }
+    } else {
+      document.getElementById('text-model-status-badge').textContent = 'Pending';
+      document.getElementById('text-model-subtitle').textContent     = 'Model training pending';
+    }
+
+  } catch (err) {
+    console.error('Failed to load model metrics:', err);
+  }
+}
+
+document.addEventListener('DOMContentLoaded', loadMetrics);
+</script>
+{% endblock %}

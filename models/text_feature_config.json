@@ -1,0 +1,25 @@
+{
+  "model_architecture": "TF-IDF + LogisticRegression",
+  "classifier_name": "SMS Spam/Malicious Message Classifier",
+  "vectorizer_type": "TfidfVectorizer",
+  "max_features": 3000,
+  "ngram_range": [
+    1,
+    2
+  ],
+  "sublinear_tf": true,
+  "stop_words": "english",
+  "strip_accents": "unicode",
+  "vocabulary_size": 3000,
+  "classes": [
+    0,
+    1
+  ],
+  "label_mapping": {
+    "0": "Legitimate/Ham",
+    "1": "Malicious/Spam"
+  },
+  "target_class": 1,
+  "target_class_name": "Malicious/Spam",
+  "class_index_in_predict_proba": 1
+}

@@ -1,0 +1,175 @@
+{
+  "dataset_name": "PhiUSIIL Phishing URL Dataset (UCI Repository)",
+  "total_samples": 235370,
+  "train_samples": 188296,
+  "test_samples": 47074,
+  "accuracy": 0.9959,
+  "precision": 0.9989,
+  "recall": 0.9914,
+  "f1_score": 0.9952,
+  "confusion_matrix": {
+    "true_negative": 26949,
+    "false_positive": 21,
+    "false_negative": 172,
+    "true_positive": 19932
+  },
+  "classification_report": {
+    "Legitimate": {
+      "precision": 0.9937,
+      "recall": 0.9992,
+      "f1-score": 0.9964,
+      "support": 26970.0
+    },
+    "Phishing": {
+      "precision": 0.9989,
+      "recall": 0.9914,
+      "f1-score": 0.9952,
+      "support": 20104.0
+    },
+    "accuracy": 0.9959,
+    "macro avg": {
+      "precision": 0.9963,
+      "recall": 0.9953,
+      "f1-score": 0.9958,
+      "support": 47074.0
+    },
+    "weighted avg": {
+      "precision": 0.9959,
+      "recall": 0.9959,
+      "f1-score": 0.9959,
+      "support": 47074.0
+    }
+  },
+  "feature_importance": [
+    {
+      "feature": "uses_https",
+      "importance": 0.41884
+    },
+    {
+      "feature": "path_length",
+      "importance": 0.1611
+    },
+    {
+      "feature": "num_slashes",
+      "importance": 0.13225
+    },
+    {
+      "feature": "domain_path_ratio",
+      "importance": 0.11319
+    },
+    {
+      "feature": "digit_count",
+      "importance": 0.05727
+    },
+    {
+      "feature": "url_length",
+      "importance": 0.0299
+    },
+    {
+      "feature": "has_suspicious_tld",
+      "importance": 0.02127
+    },
+    {
+      "feature": "hostname_entropy",
+      "importance": 0.01814
+    },
+    {
+      "feature": "num_subdomains",
+      "importance": 0.01407
+    },
+    {
+      "feature": "hostname_length",
+      "importance": 0.01178
+    },
+    {
+      "feature": "num_dots",
+      "importance": 0.00942
+    },
+    {
+      "feature": "num_hyphens",
+      "importance": 0.00919
+    },
+    {
+      "feature": "suspicious_keyword_count",
+      "importance": 0.00204
+    },
+    {
+      "feature": "num_question_marks",
+      "importance": 0.00065
+    },
+    {
+      "feature": "query_length",
+      "importance": 0.00036
+    },
+    {
+      "feature": "special_char_count",
+      "importance": 0.00029
+    },
+    {
+      "feature": "has_at_symbol",
+      "importance": 0.00012
+    },
+    {
+      "feature": "num_underscores",
+      "importance": 0.0001
+    },
+    {
+      "feature": "num_percent",
+      "importance": 2e-05
+    },
+    {
+      "feature": "has_ip_address",
+      "importance": 1e-05
+    },
+    {
+      "feature": "is_url_shortener",
+      "importance": 0.0
+    },
+    {
+      "feature": "num_ampersands",
+      "importance": 0.0
+    },
+    {
+      "feature": "has_double_slash_path",
+      "importance": 0.0
+    },
+    {
+      "feature": "num_equal_signs",
+      "importance": 0.0
+    },
+    {
+      "feature": "encoded_char_count",
+      "importance": 0.0
+    }
+  ],
+  "comparison": [
+    {
+      "model": "Logistic Regression",
+      "accuracy": 0.9941,
+      "precision": 0.9989,
+      "recall": 0.9873,
+      "f1_score": 0.993
+    },
+    {
+      "model": "Decision Tree",
+      "accuracy": 0.9957,
+      "precision": 0.9987,
+      "recall": 0.9911,
+      "f1_score": 0.9949
+    },
+    {
+      "model": "Random Forest",
+      "accuracy": 0.9959,
+      "precision": 0.9989,
+      "recall": 0.9914,
+      "f1_score": 0.9952
+    }
+  ],
+  "model_parameters": {
+    "n_estimators": 100,
+    "max_depth": 15,
+    "min_samples_split": 4,
+    "min_samples_leaf": 2,
+    "class_weight": "balanced"
+  }
+}

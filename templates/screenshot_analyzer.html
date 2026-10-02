@@ -1,0 +1,260 @@
+{% extends "base.html" %}
+
+{% block title %}Screenshot Visual Analyzer — PhishGuard AI{% endblock %}
+{% block page_title %}Screenshot Visual Analyzer{% endblock %}
+
+{% block content %}
+<div style="max-width: 900px; margin: 0 auto;">
+
+  <!-- ── Page Header ── -->
+  <div style="margin-bottom: 28px;">
+    <div style="display:flex; align-items:center; gap:12px; margin-bottom:8px;">
+      <span style="font-family:var(--font-display); font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:2px; color:var(--coral);">MODAL ANALYSIS</span>
+    </div>
+    <h1 style="font-family:var(--font-display); font-size:28px; font-weight:800; color:var(--teal); margin:0 0 8px 0; line-height:1.2;">
+      SCREENSHOT / VISUAL PHISHING DETECTOR
+    </h1>
+    <p style="font-size:13px; color:var(--text-secondary); line-height:1.7; max-width:640px; margin:0;">
+      Upload a screenshot of a suspicious login form, phishing page, or email notification.
+      PhishGuard evaluates structural visual indicators (form inputs, buttons, layout geometry), performs optional OCR keyword inspection, and analyzes any extracted URLs without ever opening or visiting the destination.
+    </p>
+  </div>
+
+  <!-- ── Upload Card ── -->
+  <div class="pg-card" style="margin-bottom:24px;">
+    <div class="card-header-clean">
+      <div>
+        <span class="section-label" style="margin-bottom:4px;">Computer Vision Heuristics</span>
+        <div class="card-title-lg">Upload Webpage / Login Screenshot</div>
+      </div>
+      <div style="font-size:11px; color:var(--aqua); text-transform:uppercase; letter-spacing:1px; font-weight:700;">PNG · JPG · WEBP · max 10 MB</div>
+    </div>
+
+    <!-- Dropzone -->
+    <div id="shot-dropzone"
+         style="border:2px dashed var(--border-color); background:var(--cream-light); border-radius:var(--radius-sm); padding:48px 24px; text-align:center; cursor:pointer; transition:all 0.2s; position:relative;"
+         onmouseover="this.style.borderColor='var(--coral)'"
+         onmouseout="this.style.borderColor='var(--border-color)'"
+         ondragover="event.preventDefault(); this.style.borderColor='var(--coral)'; this.style.background='var(--cream-dark)';"
+         ondragleave="this.style.borderColor='var(--border-color)'; this.style.background='var(--cream-light)';"
+         ondrop="handleShotDrop(event)">
+
+      <!-- Image Preview -->
+      <div id="shot-preview-wrap" style="display:none; margin-bottom:16px;">
+        <img id="shot-preview-img" src="" alt="Screenshot Preview"
+             style="max-width:320px; max-height:220px; border:2px solid var(--teal); object-fit:contain; background:#fff; padding:4px;">
+      </div>
+
+      <div id="shot-dropzone-icon" style="font-size:48px; margin-bottom:12px; line-height:1;">🖼️</div>
+      <div style="font-family:var(--font-display); font-size:16px; font-weight:700; color:var(--teal); margin-bottom:4px;">DROP SCREENSHOT IMAGE HERE</div>
+      <div style="font-size:12px; color:var(--text-secondary); margin-bottom:16px;">or click to select an image from your computer</div>
+
+      <div style="display:flex; gap:12px; justify-content:center; flex-wrap:wrap;">
+        <button type="button" class="btn-cyber" onclick="document.getElementById('shot-file-input').click();" style="font-size:13px; padding:10px 24px;">
+          CHOOSE SCREENSHOT
+        </button>
+        <button type="button" id="shot-clear-btn" class="btn-secondary" onclick="clearShotUpload()" style="display:none; font-size:13px; padding:10px 18px;">
+          CLEAR
+        </button>
+      </div>
+
+      <input type="file" id="shot-file-input" accept="image/png,image/jpeg,image/webp,image/bmp" style="display:none;" onchange="onShotFileSelect(event)">
+    </div>
+
+    <!-- Status bar -->
+    <div id="shot-status" style="margin-top:14px; text-align:center; font-size:13px; font-weight:600; min-height:20px;"></div>
+
+    <!-- Security & Privacy Banner -->
+    <div style="margin-top: 18px; padding: 12px 16px; background-color: var(--cream-dark); border-left: 3px solid var(--teal); border-radius: var(--radius-sm); font-size: 12px; color: var(--text-secondary); line-height: 1.6;">
+      🛡️ <strong>Ephemeral & Secure Processing:</strong> Screenshot files are processed strictly in RAM and are <em>never</em> written to disk or stored in the database. Extracted URLs are statically inspected without fetching destination servers.
+    </div>
+  </div>
+
+  <!-- ── Results Section ── -->
+  <div id="shot-result-section" style="display:none;">
+
+    <!-- Risk Hero -->
+    <div class="result-hero" style="margin-bottom:20px;">
+      <div class="gauge-card">
+        <div id="shot-risk-circle" class="risk-circle Low">
+          <div id="shot-risk-score" class="risk-number">0</div>
+          <div class="risk-scale">Visual Risk / 100</div>
+        </div>
+        <div id="shot-risk-level" class="badge-risk-level Low">Low Risk</div>
+      </div>
+
+      <div class="verdict-card">
+        <div>
+          <div class="verdict-header">
+            <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Visual Assessment Verdict</div>
+            <div id="shot-verdict-badge" class="verdict-badge Legitimate">LEGITIMATE</div>
+          </div>
+          <div id="shot-prediction-text" style="font-size:14px; color:var(--teal); font-weight:700; margin-top:6px;">
+            --
+          </div>
+        </div>
+
+        <div class="recommendation-box">
+          <div style="font-weight:700; font-size:12px; text-transform:uppercase; color:var(--teal); margin-bottom:4px; letter-spacing:0.5px;">Security Recommendation</div>
+          <div id="shot-recommendation" class="recommendation-text">No threat indicators observed.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Visual Structure Heuristics Card -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">OpenCV Heuristic Analysis</span>
+          <div class="card-title-lg">Visual UI Structure</div>
+        </div>
+        <div id="shot-visual-pts-badge" style="font-size:11px; color:var(--coral); font-weight:700; text-transform:uppercase; letter-spacing:1px;">0 / 35 pts</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-bottom:16px;">
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Input Fields</div>
+          <div id="shot-metric-inputs" style="font-size:24px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:4px;">0</div>
+          <div style="font-size:10px; color:var(--text-muted);">detected contours</div>
+        </div>
+
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Action Buttons</div>
+          <div id="shot-metric-buttons" style="font-size:24px; font-weight:800; color:var(--teal); font-family:var(--font-display); margin-top:4px;">0</div>
+          <div style="font-size:10px; color:var(--text-muted);">detected contours</div>
+        </div>
+
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px; border-radius:var(--radius-sm); text-align:center;">
+          <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Contour Complexity</div>
+          <div id="shot-metric-contours" style="font-size:24px; font-weight:800; color:var(--terracotta); font-family:var(--font-display); margin-top:4px;">0</div>
+          <div style="font-size:10px; color:var(--text-muted);">total UI regions</div>
+        </div>
+      </div>
+
+      <div id="shot-visual-interpretation" style="font-size:12.5px; color:var(--text-secondary); line-height:1.7; background:var(--cream-light); padding:10px 14px; border-radius:var(--radius-sm);">
+      </div>
+    </div>
+
+    <!-- OCR & Linguistic Findings Card -->
+    <div class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Optical Character Recognition</span>
+          <div class="card-title-lg">Text & Linguistic Indicators</div>
+        </div>
+        <div id="shot-ocr-status-badge" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; padding:3px 8px; border-radius:2px;"></div>
+      </div>
+
+      <div id="shot-ocr-content">
+        <div id="shot-text-indicators-list" style="margin-bottom:14px;"></div>
+        <div style="font-size:11px; font-weight:700; text-transform:uppercase; color:var(--text-muted); margin-bottom:6px; letter-spacing:0.5px;">Extracted OCR Text Preview:</div>
+        <pre id="shot-ocr-preview" style="background:var(--cream-dark); border:1px solid var(--border-color); padding:12px; border-radius:var(--radius-sm); font-size:11.5px; font-family:var(--font-mono); color:var(--teal); max-height:120px; overflow-y:auto; white-space:pre-wrap; word-break:break-all;"></pre>
+      </div>
+
+      <div id="shot-ocr-unavailable" style="display:none; font-size:12.5px; color:var(--text-secondary); line-height:1.7; background:var(--cream-dark); padding:12px 14px; border-radius:var(--radius-sm);">
+        ℹ️ <strong>OCR Engine Notice:</strong> <code>pytesseract</code> / Tesseract binary is not installed in the current environment. Analysis completed using OpenCV visual heuristics exclusively with zero crash.
+      </div>
+    </div>
+
+    <!-- Extracted URLs & Brand Correlation Card (if URLs found) -->
+    <div id="shot-url-cascade-card" class="pg-card" style="display:none; margin-bottom:20px; border-left:4px solid var(--aqua);">
+      <div class="card-header-clean" style="margin-bottom:14px;">
+        <div>
+          <span class="section-label" style="margin-bottom:4px;">Multi-Modal Cascaded Analysis</span>
+          <div class="card-title-lg">Extracted Link Inspection</div>
+        </div>
+        <div id="shot-mismatch-badge" style="font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px;"></div>
+      </div>
+
+      <div style="margin-bottom:12px;">
+        <div style="font-size:11px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Extracted Destination(s):</div>
+        <div id="shot-extracted-urls-list" style="margin-top:6px;"></div>
+      </div>
+
+      <div id="shot-url-analysis-summary" style="background:var(--cream-dark); padding:12px 14px; border-radius:var(--radius-sm); font-size:12.5px; line-height:1.7; color:var(--text-secondary);">
+      </div>
+    </div>
+
+    <!-- ── Phase 9 Explainable AI Sections ── -->
+
+    <!-- WHY WAS THIS FLAGGED? -->
+    <div id="shot-why-flagged" class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:14px; border-bottom:2px solid var(--coral); padding-bottom:12px;">
+        <div>
+          <span class="section-label" style="color:var(--coral); margin-bottom:4px;">Investigation Report</span>
+          <div class="card-title-lg">WHY WAS THIS FLAGGED?</div>
+        </div>
+      </div>
+      <div id="shot-why-list"></div>
+    </div>
+
+    <!-- WHAT DOES THIS MEAN? -->
+    <div id="shot-what-means" class="pg-card" style="margin-bottom:20px; border-left:4px solid var(--terracotta);">
+      <div class="card-header-clean" style="margin-bottom:12px;">
+        <div class="card-title-lg" style="color:var(--terracotta);">WHAT DOES THIS MEAN?</div>
+      </div>
+      <p id="shot-what-text" style="font-size:13px; color:var(--text-secondary); line-height:1.8; margin:0;"></p>
+    </div>
+
+    <!-- RISK CONTRIBUTION -->
+    <div id="shot-risk-contrib" class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:16px;">
+        <div class="card-title-lg">RISK CONTRIBUTION BREAKDOWN</div>
+        <div style="font-size:11px; color:var(--text-muted); font-family:var(--font-mono);">max 100 pts (bounded components)</div>
+      </div>
+
+      <div style="display:grid; grid-template-columns:repeat(auto-fit, minmax(130px, 1fr)); gap:10px; text-align:center;">
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px 10px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Visual UI</div>
+          <div id="shot-cb-vis-pts" style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--teal);">0 / 35</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px 10px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">OCR Text</div>
+          <div id="shot-cb-txt-pts" style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--terracotta);">0 / 25</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px 10px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">Brand Mismatch</div>
+          <div id="shot-cb-mis-pts" style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--coral);">0 / 20</div>
+        </div>
+        <div style="background:var(--cream-dark); border:1.5px solid var(--border-color); padding:14px 10px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--text-muted); font-weight:700;">URL Cascade</div>
+          <div id="shot-cb-url-pts" style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--aqua);">0 / 20</div>
+        </div>
+        <div style="background:var(--teal); border:1.5px solid var(--teal); padding:14px 10px; border-radius:var(--radius-sm);">
+          <div style="font-size:10px; text-transform:uppercase; color:var(--cream); font-weight:700;">Total Score</div>
+          <div id="shot-cb-total-pts" style="font-family:var(--font-display); font-size:20px; font-weight:800; color:var(--cream);">0 / 100</div>
+        </div>
+      </div>
+
+      <div id="shot-formula-text" style="font-family:var(--font-mono); font-size:11px; color:var(--text-muted); margin-top:12px; padding:8px 12px; background:var(--cream-dark); border-radius:var(--radius-sm);"></div>
+    </div>
+
+    <!-- INVESTIGATION TIMELINE -->
+    <div id="shot-timeline" class="pg-card" style="margin-bottom:20px;">
+      <div class="card-header-clean" style="margin-bottom:16px;">
+        <div class="card-title-lg">INVESTIGATION TIMELINE</div>
+      </div>
+      <div id="shot-timeline-list"></div>
+    </div>
+
+    <!-- THREAT INTELLIGENCE (Phase 11 Reuse, if URL was extracted) -->
+    <div id="shot-p11-threat-intel" class="pg-card" style="display:none; margin-bottom:20px;">
+      <div style="background: var(--teal); color: var(--cream); padding: 12px 20px; border-left: 5px solid var(--aqua); display: flex; align-items: center; justify-content: space-between; border-radius: var(--radius-sm) var(--radius-sm) 0 0;">
+        <div>
+          <div style="font-size: 11px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; opacity: 0.75; margin-bottom: 2px;">External Enrichment</div>
+          <div style="font-size: 16px; font-weight: 800; font-family: var(--font-display);">THREAT INTELLIGENCE</div>
+        </div>
+        <span id="shot-p11-ti-status-badge" style="font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; padding: 4px 10px; border: 2px solid var(--aqua); border-radius: 2px; color: var(--aqua);"></span>
+      </div>
+      <div id="shot-p11-ti-body" style="padding: 18px 20px; font-size: 13px; color: var(--text-secondary); line-height: 1.7;"></div>
+    </div>
+
+  </div><!-- end shot-result-section -->
+
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="/static/js/analyzer.js"></script>
+<script src="/static/js/screenshot_analyzer.js"></script>
+{% endblock %}

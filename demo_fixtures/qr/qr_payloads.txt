@@ -1,0 +1,5 @@
+legitimate_qr.png
+Payload: https://example.com/
+
+suspicious_qr.png
+Payload: https://example.test/verify-account-login

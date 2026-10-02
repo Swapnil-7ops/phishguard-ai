@@ -1,0 +1,111 @@
+{% extends "base.html" %}
+
+{% block title %}About & Project Guide — PhishGuard AI{% endblock %}
+{% block page_title %}About Project{% endblock %}
+
+{% block content %}
+<div style="max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px;">
+  <!-- Project Summary Card -->
+  <div class="pg-card">
+    <div class="card-header-clean">
+      <div>
+        <span class="section-label" style="margin-bottom: 4px;">PBL Project Overview</span>
+        <div class="card-title-lg">Explainable Security & Problem Statement</div>
+      </div>
+      <span class="badge-risk-level Low">BE Information Technology</span>
+    </div>
+    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin-bottom: 14px;">
+      <strong>PhishGuard AI</strong> is an Explainable Multi-Modal Phishing Detection System designed for Academic Programming-Based Learning (PBL).
+      Phishing remains the primary attack vector for credential theft, ransomware initiation, and corporate compromise. Traditional signature-based blacklists suffer from zero-hour latency, while opaque deep learning classifiers fail to offer explainable rationale for security operations center (SOC) analysts.
+    </p>
+    <p style="font-size: 14px; color: var(--text-secondary); line-height: 1.7;">
+      This project addresses these shortcomings by separating statistical ML inference (Random Forest), deterministic rule indicators, NLP linguistic analysis, and explainable risk scoring into an integrated, transparent architecture.
+    </p>
+  </div>
+
+  <!-- System Architecture Card -->
+  <div class="pg-card">
+    <div class="card-header-clean">
+      <div class="card-title-lg">High-Level Architecture Pipeline</div>
+    </div>
+    <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 18px; border-radius: var(--radius-sm); font-family: var(--font-mono); font-size: 12px; color: var(--teal); line-height: 1.8; overflow-x: auto;">
+      Input [URL / Message / QR / Screenshot]<br>
+      &nbsp;&nbsp;├── URL Flow: Normalize ➔ 25-Feature Extraction ➔ RandomForest Model (60% wt) + Rule Engine (40% wt) ➔ Risk Score (0-100)<br>
+      &nbsp;&nbsp;├── Message Flow: NLP Heuristics + TF-IDF Logistic Regression ➔ Link Extraction ➔ Cascaded URL Analysis ➔ Combined Risk<br>
+      &nbsp;&nbsp;├── QR Code Flow: Decoded via pyzbar ➔ Extracted URL dispatched into URL Analyzer (No Automatic Navigation)<br>
+      &nbsp;&nbsp;└── Multimodal Vision: Visual inspection for brand spoofing / fake login dialogs<br>
+      &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;└── Output ➔ Transparent Explainability Breakdown ➔ MongoDB Persistent Audit Log
+    </div>
+  </div>
+
+  <!-- 6 Major Component Modules -->
+  <div class="pg-card">
+    <div class="card-header-clean">
+      <div class="card-title-lg">Component Breakdown</div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 14px;">
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">1. ml/feature_extractor.py</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Extracts 25 lexical and structural numerical features.<br>
+          <strong>Why:</strong> ML models require structured inputs. These metrics reflect deliberate adversarial engineering without visiting malicious web servers (SSRF safe).<br>
+          <strong>Input/Output:</strong> Receives raw URL string; returns dict of 25 float/int features.
+        </p>
+      </div>
+
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">2. ml/train_url_model.py &amp; RandomForestClassifier</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Trains an ensemble of 100 decision trees on offline holdout sets.<br>
+          <strong>Why:</strong> Random Forest handles feature correlation, non-linear boundaries, and prevents overfitting through bagging and feature subsampling.<br>
+          <strong>Output:</strong> Persisted model artifact <code>models/url_model.pkl</code> and verifiable holdout confusion matrix.
+        </p>
+      </div>
+
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">3. services/rule_engine.py</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Evaluates explicit cybersecurity indicators (e.g. IP host, @ redirect, disposable TLD).<br>
+          <strong>Why:</strong> Statistical models can fail on novel structural tricks. Heuristic rules guarantee deterministic detection of critical red flags.
+        </p>
+      </div>
+
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">4. services/risk_engine.py</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Blends ML probability (up to 60 pts) and Rule points (up to 40 pts) into a 0–100 Risk Score.<br>
+          <strong>Key principle:</strong> Model Confidence (posterior probability) is distinct from Risk Score (composite security index).
+        </p>
+      </div>
+
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">5. services/message_analyzer.py</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Scans messages for urgency, threats, and OTP interception, extracts URLs, and cascades them into the URL Analyzer.
+        </p>
+      </div>
+
+      <div style="background-color: var(--cream); border: 1.5px solid var(--border-color); padding: 16px; border-radius: var(--radius-sm);">
+        <div style="font-family: var(--font-display); font-weight: 700; color: var(--teal); margin-bottom: 4px;">6. database/mongodb.py</div>
+        <p style="font-size: 13px; color: var(--text-secondary); line-height: 1.6;">
+          <strong>What:</strong> Manages scan history in MongoDB with automatic transparent in-memory fallback if mongod is not active.
+        </p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Real Academic Limitations -->
+  <div class="pg-card" style="border-left: 4px solid var(--terracotta);">
+    <div class="card-header-clean">
+      <div class="card-title-lg" style="color: var(--terracotta);">Documented Real-World Limitations</div>
+    </div>
+    <ul style="padding-left: 20px; font-size: 13.5px; color: var(--text-secondary); line-height: 1.8;">
+      <li><strong>No Live Network Crawling:</strong> The system analyzes lexical patterns without downloading HTML payloads. This prevents SSRF and malware execution on the host server.</li>
+      <li><strong>Adversarial Evasion:</strong> Attackers can register aged domains and configure reverse proxies (e.g. Modlishka, Evilginx) that exhibit clean lexical features.</li>
+      <li><strong>HTTPS Prevalence:</strong> Over 85% of modern phishing websites utilize valid TLS/SSL certificates via Let's Encrypt, making HTTPS usage an insufficient signal of legitimacy.</li>
+      <li><strong>Volatile URL Shorteners:</strong> Without actively following HTTP redirects, short links hide destination features.</li>
+      <li><strong>Decision-Support Tool:</strong> The system produces risk indicators to aid analyst judgment; it is not absolute mathematical proof of maliciousness.</li>
+    </ul>
+  </div>
+</div>
+{% endblock %}

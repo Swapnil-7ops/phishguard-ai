@@ -1,0 +1,20 @@
+{
+  "Logistic Regression": {
+    "true_negative": 26948,
+    "false_positive": 22,
+    "false_negative": 256,
+    "true_positive": 19848
+  },
+  "Decision Tree": {
+    "true_negative": 26944,
+    "false_positive": 26,
+    "false_negative": 178,
+    "true_positive": 19926
+  },
+  "Random Forest": {
+    "true_negative": 26949,
+    "false_positive": 21,
+    "false_negative": 172,
+    "true_positive": 19932
+  }
+}
